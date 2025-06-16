@@ -47,7 +47,7 @@ public class Quiz {
     @OneToMany(mappedBy = "quiz",fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Question> questions;
 
-    @OneToMany(mappedBy = "room",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "quiz",fetch = FetchType.LAZY)
     private Set<RoomQuiz> roomQuizes;
 
     public UUID getQuizId() {
@@ -147,5 +147,18 @@ public class Quiz {
     @Override
     public int hashCode() {
         return Objects.hash(quizId, creatorUserId, title, description, questionCount, durationSec, startTime, createdAt, updatedAt, questions, roomQuizes);
+    }
+
+    @Override
+    public String toString() {
+        return "Quiz{" +
+                "quizId=" + quizId +
+                ", creatorUserId=" + creatorUserId +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", questionCount=" + questionCount +
+                ", durationSec=" + durationSec +
+                ", startTime=" + startTime +
+                '}';
     }
 }

@@ -33,7 +33,7 @@ public class Room {
     @Column(name = "updated_at",updatable = false,nullable = false)
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "quiz",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "room",fetch = FetchType.LAZY)
     private Set<RoomQuiz> roomQuizes;
 
     public UUID getRoomId() {
