@@ -37,4 +37,34 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(error);
     }
+
+    @ExceptionHandler(UserDoseNotExistException.class)
+    public ResponseEntity<Map<String,String>> handleUserDoseNotExistException(UserDoseNotExistException ex){
+        Map<String,String> error = new HashMap<String,String>();
+        error.put("message", ex.getMessage());
+
+        log.error(ex.getMessage());
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(QuizDoesNotExistsException.class)
+    public ResponseEntity<Map<String,String>> handleQuizDoesNotExistsException(QuizDoesNotExistsException ex){
+        Map<String,String> error = new HashMap<String,String>();
+        error.put("message", ex.getMessage());
+
+        log.error(ex.getMessage());
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(UnauthorizedActionException.class)
+    public ResponseEntity<Map<String,String>> handleQuizDoesNotExistsException(UnauthorizedActionException ex){
+        Map<String,String> error = new HashMap<String,String>();
+        error.put("message", ex.getMessage());
+
+        log.warn(ex.getMessage());
+
+        return ResponseEntity.status(401).body(error);
+    }
 }
