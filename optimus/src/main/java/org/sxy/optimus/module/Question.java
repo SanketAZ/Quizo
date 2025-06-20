@@ -99,11 +99,11 @@ public class Question {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Question question)) return false;
-        return Objects.equals(questionId, question.questionId) && Objects.equals(text, question.text) && Objects.equals(weight, question.weight) && Objects.equals(createdAt, question.createdAt) && Objects.equals(updatedAt, question.updatedAt) && Objects.equals(quiz, question.quiz) && Objects.equals(options, question.options);
+        return Objects.equals(questionId, question.questionId) && Objects.equals(text, question.text) && Objects.equals(weight, question.weight);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(questionId, text, weight, createdAt, updatedAt, quiz, options);
+        return Objects.hash(questionId, text, weight);
     }
 }

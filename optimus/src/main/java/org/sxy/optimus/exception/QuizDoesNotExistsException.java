@@ -7,8 +7,8 @@ public class QuizDoesNotExistsException extends RuntimeException {
     private static final Logger log = LoggerFactory.getLogger(QuizDoesNotExistsException.class);
 
     public QuizDoesNotExistsException(String property , String value) {
-        super("User with property '" + property +": "+value+ "' doesn't exist or is not exist.");
+        super("Quiz with property '" + property +": "+value+ "' doesn't exist or is not exist.");
 
-        log.warn("User with property '{}: {}' doesn't exist or is not exist.", property, value);
+        log.warn("Quiz with property '{}: {}' doesn't exist or is not exist.", property, value);
     }
 }

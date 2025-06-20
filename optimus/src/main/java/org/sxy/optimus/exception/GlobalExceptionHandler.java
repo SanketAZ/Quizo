@@ -6,8 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,5 +64,16 @@ public class GlobalExceptionHandler {
         log.warn(ex.getMessage());
 
         return ResponseEntity.status(401).body(error);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<Map<String,Object>> handleQuizDoesNotExistsException(ValidationException ex){
+        Map<String,Object> error = new HashMap<String,Object>();
+        error.put("message", ex.getMessage());
+        error.put("validationErrors",ex.getValidationResults());
+
+        log.warn(ex.getMessage());
+
+        return ResponseEntity.badRequest().body(error);
     }
 }

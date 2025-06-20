@@ -85,11 +85,11 @@ public class Option {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Option option)) return false;
-        return Objects.equals(optionId, option.optionId) && Objects.equals(text, option.text) && Objects.equals(isCorrect, option.isCorrect) && Objects.equals(createdAt, option.createdAt) && Objects.equals(updatedAt, option.updatedAt) && Objects.equals(question, option.question);
+        return Objects.equals(optionId, option.optionId) && Objects.equals(text, option.text) && Objects.equals(isCorrect, option.isCorrect);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(optionId, text, isCorrect, createdAt, updatedAt, question);
+        return Objects.hash(optionId, text, isCorrect);
     }
 }

@@ -63,4 +63,11 @@ public class QuizService {
 
         return quizMapper.toQuizUpdateResponseDTO(updatedQuiz);
     }
+
+    public Quiz getQuiz(UUID quizID){
+
+        Quiz quiz=quizRepo.findById(quizID)
+                .orElseThrow(() -> new QuizDoesNotExistsException("quizId",quizID.toString()));
+        return quiz;
+    }
 }
