@@ -1,5 +1,8 @@
 package org.sxy.optimus.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/question")
+@Tag(name = "Question",description = "Question service api's")
 public class QuestionController {
 
     @Autowired
@@ -22,9 +26,10 @@ public class QuestionController {
 
     //Adding multiple questions to quiz
     @PostMapping("/{userId}/{quizId}")
+    @Operation(summary = "Adding Multiple Questions to quiz")
     public ResponseEntity<List<QuestionCreateResDTO>> addQuestion(@PathVariable(name = "userId") UUID userId,
                                                                   @PathVariable(name = "quizId") UUID quizId,
-                                                                  @RequestBody List<QuestionRequestDTO> questions) {
+                                                                  @RequestBody @Valid List< @Valid QuestionRequestDTO> questions) {
 
         //checking userId in DTO and Principle User
         if(!userId.toString().equals(UserContextHolder.getUser().getId())){

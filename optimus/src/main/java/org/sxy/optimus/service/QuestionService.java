@@ -1,5 +1,7 @@
 package org.sxy.optimus.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.QuestionCreateResDTO;
@@ -18,6 +20,8 @@ import java.util.UUID;
 @Service
 public class QuestionService {
 
+    private static final Logger log = LoggerFactory.getLogger(QuestionService.class);
+
     @Autowired
     private QuestionRepo questionRepo;
 
@@ -28,6 +32,8 @@ public class QuestionService {
     private ValidationService validationService;
 
     private final QuestionMapper questionMapper;
+
+
 
     public QuestionService(QuestionMapper questionMapper) {
         this.questionMapper = questionMapper;
@@ -62,6 +68,8 @@ public class QuestionService {
 
         //Saving the questions
         List<Question> savedQuestions=questionRepo.saveAll(questionToSave);
+
+        log.info("Questions added to quiz :{}",quiz.getQuizId());
 
         return questionMapper.toQuestionCreateResDTOList(savedQuestions);
     }

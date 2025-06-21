@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +24,26 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         });
 
+
+        return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String,String>> handleHandlerMethodValidationException(HandlerMethodValidationException ex){
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getParameterValidationResults().forEach(paramResult -> {
+            paramResult.getResolvableErrors().forEach(error -> {
+
+                String path = error.getCodes() != null && error.getCodes().length > 0
+                        ? error.getCodes()[0]
+                        : paramResult.getMethodParameter().getParameterName();
+                String message = error.getDefaultMessage();
+
+                log.error("Validation failed: {} -> {}", path, message);
+                errors.put(path, message);
+            });
+        });
 
         return ResponseEntity.badRequest().body(errors);
     }

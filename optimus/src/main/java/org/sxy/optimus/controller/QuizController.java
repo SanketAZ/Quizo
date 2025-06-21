@@ -1,5 +1,6 @@
 package org.sxy.optimus.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -23,6 +24,7 @@ public class QuizController {
     private QuizService quizService;
 
     @PostMapping
+    @Operation(summary = "Create Quiz with description")
     public ResponseEntity<QuizCreatedDTO> createQuiz(@RequestBody @Valid QuizCreateDTO quizCreateDTO){
 
         //checking userId in DTO and Principle User
@@ -37,6 +39,7 @@ public class QuizController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update quiz description")
     public ResponseEntity<QuizUpdateResponseDTO> updateQuiz(@PathVariable(name="id") String id,
             @RequestBody @Valid QuizUpdateRequestDTO quizUpdateRequestDTO){
         //checking userId in DTO and Principle User

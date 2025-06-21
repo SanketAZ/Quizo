@@ -1,5 +1,6 @@
 package org.sxy.optimus.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
@@ -15,6 +16,7 @@ public class QuestionRequestDTO {
     @Min(1)
     private Integer weight;
 
+    @Valid
     private List<OptionRequestDTO> options;
 
     public QuestionRequestDTO() {
