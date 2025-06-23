@@ -3,6 +3,8 @@ package org.sxy.optimus.service;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.OptionRequestDTO;
 import org.sxy.optimus.dto.QuestionRequestDTO;
+import org.sxy.optimus.dto.QuestionUpdateReqDTO;
+import org.sxy.optimus.mapper.OptionMapper;
 import org.sxy.optimus.validation.ValidationError;
 import org.sxy.optimus.validation.ValidationResult;
 
@@ -13,6 +15,12 @@ import java.util.Set;
 
 @Service
 public class ValidationService {
+
+    private final OptionMapper optionMapper;
+
+    public ValidationService(OptionMapper optionMapper) {
+        this.optionMapper = optionMapper;
+    }
 
 
     public List<ValidationResult> validateQuestionRequestDTOs(List<QuestionRequestDTO> questionRequestDTOs){
@@ -27,6 +35,44 @@ public class ValidationService {
             index++;
         }
         return validationResults;
+    }
+
+    public List<ValidationResult> validateQuestionUpdateReqDTOs(List<QuestionUpdateReqDTO> questionUpdateReqDTOs){
+        List<ValidationResult> validationResults = new ArrayList<>();
+
+        int index=0;
+        for(QuestionUpdateReqDTO questionUpdateReqDTO : questionUpdateReqDTOs){
+            List<ValidationError> questionsError=validateQuestionUpdateReqDTO(questionUpdateReqDTO);
+            if(!questionsError.isEmpty()){
+                validationResults.add(new ValidationResult(index,questionsError));
+            }
+            index++;
+        }
+        return validationResults;
+
+    }
+    private List<ValidationError> validateQuestionUpdateReqDTO(QuestionUpdateReqDTO questionUpdateReqDTO){
+        List<ValidationError> errors = new ArrayList<ValidationError>();
+
+        List<OptionRequestDTO> options=new ArrayList<>();
+        if(!questionUpdateReqDTO.getNewOptions().isEmpty()){
+            options.addAll(questionUpdateReqDTO.getNewOptions());
+        }
+        options.addAll(optionMapper.toOptionRequestDTOs(questionUpdateReqDTO.getOptions()));
+
+        if(options.isEmpty() || options.size() == 1){
+            errors.add(new ValidationError("options", "Number of options must be greater than 1"));
+        }
+
+        if(!isOptionCorrectCount(options,1)){
+            errors.add(new ValidationError("options", "Exactly one correct option is required"));
+        }
+
+        if(isDuplicateOptions(options)){
+            errors.add(new ValidationError("options", "Duplicate Options present"));
+        }
+
+        return errors;
     }
 
     private List<ValidationError> validateQuestionRequestDTO(QuestionRequestDTO questionRequestDTO){

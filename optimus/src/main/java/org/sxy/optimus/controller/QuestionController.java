@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.sxy.optimus.dto.QuestionCreateResDTO;
 import org.sxy.optimus.dto.QuestionRequestDTO;
+import org.sxy.optimus.dto.QuestionUpdateReqDTO;
+import org.sxy.optimus.dto.QuestionUpdateResDTO;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuestionService;
 import org.sxy.optimus.utility.UserContextHolder;
@@ -44,4 +46,24 @@ public class QuestionController {
                 .body(addedQuestions);
 
     }
+
+    //Update single question in quiz
+    @PutMapping("/{userId}/{questionId}")
+    @Operation(summary = "Updating one Questions")
+    public ResponseEntity<QuestionUpdateResDTO> updateQuestion(@PathVariable(name = "userId") UUID userId,
+                                                               @PathVariable(name = "questionId") UUID questionId,
+                                                               @RequestBody @Valid QuestionUpdateReqDTO question){
+
+        //checking userId in DTO and Principle User
+        if(!userId.toString().equals(UserContextHolder.getUser().getId())){
+            throw new UserIdMismatchException(userId.toString(), UserContextHolder.getUser().getId());
+        }
+
+        //Updating the question
+        QuestionUpdateResDTO updatedQuestion=questionService.updateQuestion(userId, questionId, question);
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(updatedQuestion);
+    }
+
 }

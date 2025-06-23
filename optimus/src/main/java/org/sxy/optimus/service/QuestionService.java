@@ -1,21 +1,23 @@
 package org.sxy.optimus.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.sxy.optimus.dto.QuestionCreateResDTO;
-import org.sxy.optimus.dto.QuestionRequestDTO;
+import org.sxy.optimus.dto.*;
+import org.sxy.optimus.exception.QuestionDoesNotExistsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
+import org.sxy.optimus.mapper.OptionMapper;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.module.Option;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.repo.QuestionRepo;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionService {
@@ -33,10 +35,11 @@ public class QuestionService {
 
     private final QuestionMapper questionMapper;
 
+    private final OptionMapper optionMapper;
 
-
-    public QuestionService(QuestionMapper questionMapper) {
+    public QuestionService(QuestionMapper questionMapper, OptionMapper optionMapper) {
         this.questionMapper = questionMapper;
+        this.optionMapper = optionMapper;
     }
 
     //Method will add the question to the provided quiz
@@ -72,6 +75,65 @@ public class QuestionService {
         log.info("Questions added to quiz :{}",quiz.getQuizId());
 
         return questionMapper.toQuestionCreateResDTOList(savedQuestions);
+    }
+
+    public QuestionUpdateResDTO updateQuestion(UUID userId, UUID questionId, QuestionUpdateReqDTO questionUpdateReqDTO) {
+
+        //validation of the question
+        if(!validationService.validateQuestionUpdateReqDTOs(List.of(questionUpdateReqDTO)).isEmpty()){
+            throw new ValidationException("Validation failed for one or more questions",validationService.validateQuestionUpdateReqDTOs(List.of(questionUpdateReqDTO)));
+        }
+
+        //fetch the Question
+        Question question=questionRepo.findQuestionByQuestionId(questionId);
+
+        //checking question is present or not
+        if(question==null){
+            throw new QuestionDoesNotExistsException("QuestionId",questionId.toString());
+        }
+
+        //validating user has access to the quiz
+        if(!question.getQuiz().getCreatorUserId().equals(userId)){
+            throw new UnauthorizedActionException("User with id "+userId +"is not authorized to update the question");
+        }
+
+        //update question fields
+        question.setWeight(questionUpdateReqDTO.getWeight());
+        question.setText(questionUpdateReqDTO.getText());
+
+        //Updating existing options
+        Map<UUID,Option> existingOptions=question.getOptions().stream()
+                .collect(Collectors.toMap(Option::getOptionId, o -> o));
+
+
+        Set<UUID>incomingIds=new HashSet<>();
+        for(OptionUpdateReqDTO optionUpdateReqDTO:questionUpdateReqDTO.getOptions()) {
+            UUID optId= UUID.fromString(optionUpdateReqDTO.getOptionId());
+            incomingIds.add(optId);
+
+            Option existingOption=existingOptions.get(optId);
+            if(existingOption!=null){
+                existingOption.setIsCorrect(optionUpdateReqDTO.getIsCorrect());
+                existingOption.setText(optionUpdateReqDTO.getText());
+            }
+        }
+
+        question.getOptions().removeIf(o->!incomingIds.contains(o.getOptionId()));
+
+        //add newly created options to question
+        for(OptionRequestDTO optionRequestDTO:questionUpdateReqDTO.getNewOptions()) {
+            Option newOption=new Option();
+            newOption.setText(optionRequestDTO.getText());
+            newOption.setIsCorrect(optionRequestDTO.getIsCorrect());
+            newOption.setQuestion(question);
+            question.getOptions().add(newOption);
+        }
+
+        Question updatedQuestion=questionRepo.save(question);
+
+        log.info("Question updated:{}",updatedQuestion);
+
+        return questionMapper.toQuestionUpdateResDTO(updatedQuestion);
     }
 
 }
