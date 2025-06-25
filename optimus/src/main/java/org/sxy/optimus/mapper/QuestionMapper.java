@@ -2,9 +2,9 @@ package org.sxy.optimus.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.sxy.optimus.dto.QuestionCreateResDTO;
-import org.sxy.optimus.dto.QuestionRequestDTO;
-import org.sxy.optimus.dto.QuestionUpdateResDTO;
+import org.sxy.optimus.dto.question.QuestionCreateResDTO;
+import org.sxy.optimus.dto.question.QuestionRequestDTO;
+import org.sxy.optimus.dto.question.QuestionUpdateResDTO;
 import org.sxy.optimus.module.Question;
 
 import java.util.List;

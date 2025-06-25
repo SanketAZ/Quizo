@@ -1,7 +1,6 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.question;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import org.sxy.optimus.dto.option.OptionCreateResDTO;
 
 import java.util.List;
 import java.util.Objects;

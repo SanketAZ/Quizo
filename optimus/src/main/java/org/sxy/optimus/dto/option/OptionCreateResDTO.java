@@ -1,6 +1,4 @@
-package org.sxy.optimus.dto;
-
-import jakarta.validation.constraints.NotBlank;
+package org.sxy.optimus.dto.option;
 
 import java.util.Objects;
 

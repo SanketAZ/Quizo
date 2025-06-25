@@ -1,8 +1,10 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.question;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import org.sxy.optimus.dto.option.OptionRequestDTO;
+import org.sxy.optimus.dto.option.OptionUpdateReqDTO;
 
 import java.util.List;
 

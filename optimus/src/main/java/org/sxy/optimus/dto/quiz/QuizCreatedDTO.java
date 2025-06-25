@@ -1,4 +1,4 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.quiz;
 
 public class QuizCreatedDTO {
     private String quizId;

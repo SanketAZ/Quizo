@@ -78,6 +78,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    @ExceptionHandler(ResourceDoesNotExitsException.class)
+    public ResponseEntity<Map<String,String>> handleResourceDoesNotExitsException(ResourceDoesNotExitsException ex){
+        Map<String,String> error = new HashMap<String,String>();
+        error.put("message", ex.getMessage());
+
+        log.error(ex.getMessage());
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
     @ExceptionHandler(UnauthorizedActionException.class)
     public ResponseEntity<Map<String,String>> handleQuizDoesNotExistsException(UnauthorizedActionException ex){
         Map<String,String> error = new HashMap<String,String>();

@@ -1,11 +1,10 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.quiz;
 
-import jakarta.persistence.Id;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public class QuizCreateDTO {
+public class QuizUpdateResponseDTO {
     @NotBlank(message = "user cannot be empty")
     private String creatorUserId;
 
@@ -26,16 +25,24 @@ public class QuizCreateDTO {
     @NotBlank(message = "start time is mandatory")
     private String startTime;
 
-    public QuizCreateDTO() {
+    public QuizUpdateResponseDTO() {
     }
 
-    public QuizCreateDTO(String creatorUserId, String startTime, Integer durationSec, Integer questionCount, String description, String title) {
+    public QuizUpdateResponseDTO(String creatorUserId, String startTime, Integer durationSec, Integer questionCount, String description, String title) {
         this.creatorUserId = creatorUserId;
         this.startTime = startTime;
         this.durationSec = durationSec;
         this.questionCount = questionCount;
         this.description = description;
         this.title = title;
+    }
+
+    public String getCreatorUserId() {
+        return creatorUserId;
+    }
+
+    public void setCreatorUserId(String creatorUserId) {
+        this.creatorUserId = creatorUserId;
     }
 
     public String getStartTime() {
@@ -54,12 +61,12 @@ public class QuizCreateDTO {
         this.durationSec = durationSec;
     }
 
-    public Integer getQuestionCount() {
-        return questionCount;
+    public String getTitle() {
+        return title;
     }
 
-    public void setQuestionCount(Integer questionCount) {
-        this.questionCount = questionCount;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getDescription() {
@@ -70,19 +77,11 @@ public class QuizCreateDTO {
         this.description = description;
     }
 
-    public String getTitle() {
-        return title;
+    public Integer getQuestionCount() {
+        return questionCount;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getCreatorUserId() {
-        return creatorUserId;
-    }
-
-    public void setCreatorUserId(String creatorUserId) {
-        this.creatorUserId = creatorUserId;
+    public void setQuestionCount(Integer questionCount) {
+        this.questionCount = questionCount;
     }
 }

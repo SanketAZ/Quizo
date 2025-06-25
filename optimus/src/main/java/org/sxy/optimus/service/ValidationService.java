@@ -1,9 +1,9 @@
 package org.sxy.optimus.service;
 
 import org.springframework.stereotype.Service;
-import org.sxy.optimus.dto.OptionRequestDTO;
-import org.sxy.optimus.dto.QuestionRequestDTO;
-import org.sxy.optimus.dto.QuestionUpdateReqDTO;
+import org.sxy.optimus.dto.option.OptionRequestDTO;
+import org.sxy.optimus.dto.question.QuestionRequestDTO;
+import org.sxy.optimus.dto.question.QuestionUpdateReqDTO;
 import org.sxy.optimus.mapper.OptionMapper;
 import org.sxy.optimus.validation.ValidationError;
 import org.sxy.optimus.validation.ValidationResult;

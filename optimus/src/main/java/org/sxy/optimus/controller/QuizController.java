@@ -3,18 +3,15 @@ package org.sxy.optimus.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.sxy.optimus.dto.QuizCreateDTO;
-import org.sxy.optimus.dto.QuizCreatedDTO;
-import org.sxy.optimus.dto.QuizUpdateRequestDTO;
-import org.sxy.optimus.dto.QuizUpdateResponseDTO;
+import org.sxy.optimus.dto.quiz.QuizCreateDTO;
+import org.sxy.optimus.dto.quiz.QuizCreatedDTO;
+import org.sxy.optimus.dto.quiz.QuizUpdateRequestDTO;
+import org.sxy.optimus.dto.quiz.QuizUpdateResponseDTO;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuizService;
 import org.sxy.optimus.utility.UserContextHolder;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/quiz")

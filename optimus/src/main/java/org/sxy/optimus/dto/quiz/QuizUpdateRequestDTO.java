@@ -1,10 +1,10 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.quiz;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public class QuizUpdateResponseDTO {
+public class QuizUpdateRequestDTO {
     @NotBlank(message = "user cannot be empty")
     private String creatorUserId;
 
@@ -25,16 +25,16 @@ public class QuizUpdateResponseDTO {
     @NotBlank(message = "start time is mandatory")
     private String startTime;
 
-    public QuizUpdateResponseDTO() {
+    public QuizUpdateRequestDTO() {
     }
 
-    public QuizUpdateResponseDTO(String creatorUserId, String startTime, Integer durationSec, Integer questionCount, String description, String title) {
+    public QuizUpdateRequestDTO(String creatorUserId, String title, String description, Integer questionCount, Integer durationSec, String startTime) {
         this.creatorUserId = creatorUserId;
-        this.startTime = startTime;
-        this.durationSec = durationSec;
-        this.questionCount = questionCount;
-        this.description = description;
         this.title = title;
+        this.description = description;
+        this.questionCount = questionCount;
+        this.durationSec = durationSec;
+        this.startTime = startTime;
     }
 
     public String getCreatorUserId() {
@@ -43,22 +43,6 @@ public class QuizUpdateResponseDTO {
 
     public void setCreatorUserId(String creatorUserId) {
         this.creatorUserId = creatorUserId;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public Integer getDurationSec() {
-        return durationSec;
-    }
-
-    public void setDurationSec(Integer durationSec) {
-        this.durationSec = durationSec;
     }
 
     public String getTitle() {
@@ -83,5 +67,21 @@ public class QuizUpdateResponseDTO {
 
     public void setQuestionCount(Integer questionCount) {
         this.questionCount = questionCount;
+    }
+
+    public Integer getDurationSec() {
+        return durationSec;
+    }
+
+    public void setDurationSec(Integer durationSec) {
+        this.durationSec = durationSec;
+    }
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
     }
 }

@@ -93,6 +93,18 @@ public class Room {
     }
 
     @Override
+    public String toString() {
+        return "Room{" +
+                "ownerUserId=" + ownerUserId +
+                ", roomId=" + roomId +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof Room room)) return false;
         return Objects.equals(roomId, room.roomId) && Objects.equals(ownerUserId, room.ownerUserId) && Objects.equals(title, room.title) && Objects.equals(description, room.description) && Objects.equals(createdAt, room.createdAt) && Objects.equals(updatedAt, room.updatedAt) && Objects.equals(roomQuizes, room.roomQuizes);

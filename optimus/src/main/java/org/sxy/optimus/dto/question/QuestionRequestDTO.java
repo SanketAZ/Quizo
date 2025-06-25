@@ -1,31 +1,39 @@
-package org.sxy.optimus.dto;
+package org.sxy.optimus.dto.question;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import org.sxy.optimus.dto.option.OptionRequestDTO;
 
 import java.util.List;
 import java.util.Objects;
 
-public class QuestionUpdateResDTO {
+public class QuestionRequestDTO {
     private String questionId;
 
+    @NotBlank(message = "text cannot be empty")
     private String  text;
 
+    @Min(1)
     private Integer weight;
 
-    private List<OptionCreateResDTO> options;
+    @Valid
+    private List<OptionRequestDTO> options;
 
-    public QuestionUpdateResDTO() {
+    public QuestionRequestDTO() {
     }
 
-    public QuestionUpdateResDTO(String questionId, Integer weight, String text) {
-        this.questionId = questionId;
+    public QuestionRequestDTO(Integer weight, String text, String questionId) {
         this.weight = weight;
         this.text = text;
+        this.questionId = questionId;
     }
 
-    public List<OptionCreateResDTO> getOptions() {
+    public List<OptionRequestDTO> getOptions() {
         return options;
     }
 
-    public void setOptions(List<OptionCreateResDTO> options) {
+    public void setOptions(List<OptionRequestDTO> options) {
         this.options = options;
     }
 
@@ -55,7 +63,7 @@ public class QuestionUpdateResDTO {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof QuestionUpdateResDTO that)) return false;
+        if (!(o instanceof QuestionRequestDTO that)) return false;
         return Objects.equals(questionId, that.questionId) && Objects.equals(text, that.text) && Objects.equals(weight, that.weight) && Objects.equals(options, that.options);
     }
 

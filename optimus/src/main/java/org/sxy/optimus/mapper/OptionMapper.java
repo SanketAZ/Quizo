@@ -1,9 +1,9 @@
 package org.sxy.optimus.mapper;
 
 import org.mapstruct.Mapper;
-import org.sxy.optimus.dto.OptionCreateResDTO;
-import org.sxy.optimus.dto.OptionRequestDTO;
-import org.sxy.optimus.dto.OptionUpdateReqDTO;
+import org.sxy.optimus.dto.option.OptionCreateResDTO;
+import org.sxy.optimus.dto.option.OptionRequestDTO;
+import org.sxy.optimus.dto.option.OptionUpdateReqDTO;
 import org.sxy.optimus.module.Option;
 
 import java.util.List;
