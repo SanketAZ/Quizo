@@ -21,6 +21,13 @@ public class RoomQuiz {
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
+    public RoomQuiz(RoomQuizId id) {
+        this.id = id;
+    }
+
+    public RoomQuiz() {
+    }
+
     public RoomQuizId getId() {
         return id;
     }
@@ -48,11 +55,11 @@ public class RoomQuiz {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof RoomQuiz roomQuiz)) return false;
-        return Objects.equals(id, roomQuiz.id) && Objects.equals(room, roomQuiz.room) && Objects.equals(quiz, roomQuiz.quiz);
+        return Objects.equals(id, roomQuiz.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, room, quiz);
+        return Objects.hashCode(id);
     }
 }

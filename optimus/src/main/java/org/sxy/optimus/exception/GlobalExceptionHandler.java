@@ -58,6 +58,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    @ExceptionHandler(MismatchException.class)
+    public ResponseEntity<Map<String,String>> handleMismatchException(MismatchException ex){
+        Map<String,String> error = new HashMap<String,String>();
+        error.put("message", ex.getMessage());
+
+        log.error(ex.getMessage());
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
     @ExceptionHandler(UserDoseNotExistException.class)
     public ResponseEntity<Map<String,String>> handleUserDoseNotExistException(UserDoseNotExistException ex){
         Map<String,String> error = new HashMap<String,String>();

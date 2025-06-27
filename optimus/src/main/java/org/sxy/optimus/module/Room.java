@@ -33,7 +33,7 @@ public class Room {
     @Column(name = "updated_at",updatable = false,nullable = false)
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "room",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "room",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private Set<RoomQuiz> roomQuizes;
 
     public UUID getRoomId() {
@@ -107,11 +107,11 @@ public class Room {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Room room)) return false;
-        return Objects.equals(roomId, room.roomId) && Objects.equals(ownerUserId, room.ownerUserId) && Objects.equals(title, room.title) && Objects.equals(description, room.description) && Objects.equals(createdAt, room.createdAt) && Objects.equals(updatedAt, room.updatedAt) && Objects.equals(roomQuizes, room.roomQuizes);
+        return Objects.equals(roomId, room.roomId) && Objects.equals(ownerUserId, room.ownerUserId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(roomId, ownerUserId, title, description, createdAt, updatedAt, roomQuizes);
+        return Objects.hash(roomId, ownerUserId);
     }
 }
