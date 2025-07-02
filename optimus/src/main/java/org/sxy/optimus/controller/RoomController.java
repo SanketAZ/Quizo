@@ -5,11 +5,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.sxy.optimus.dto.PageRequestDTO;
+import org.sxy.optimus.dto.PageResponse;
+import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.exception.MismatchException;
 import org.sxy.optimus.exception.UserIdMismatchException;
+import org.sxy.optimus.service.QuizService;
 import org.sxy.optimus.service.RoomService;
 import org.sxy.optimus.utility.UserContextHolder;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/room")
@@ -18,6 +24,9 @@ public class RoomController {
 
     @Autowired
     private RoomService roomService;
+
+    @Autowired
+    private QuizService quizService;
 
     @PostMapping
     @Operation(summary = "To add Room with some basic details")
@@ -65,6 +74,16 @@ public class RoomController {
                 .ok()
                 .body(updatedRoom);
 
+    }
+
+    //Get all quizzes present in the room just passing some quiz details
+    @PostMapping("/{roomId}/quizzes")
+    private ResponseEntity<PageResponse<QuizDisplayDTO>> fetchRoomQuizzesForOwner(@PathVariable String roomId,@RequestParam(value = "status",required = true)String status, @RequestBody PageRequestDTO pageRequestDTO) {
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        PageResponse<QuizDisplayDTO> requireQuizzes=quizService.fetchOwnerQuizzesForRoom(userId,status,UUID.fromString(roomId), pageRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(requireQuizzes);
     }
 
 }

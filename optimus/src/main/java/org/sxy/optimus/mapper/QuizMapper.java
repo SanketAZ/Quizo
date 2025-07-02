@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 import org.sxy.optimus.dto.quiz.QuizCreateDTO;
 import org.sxy.optimus.dto.quiz.QuizCreatedDTO;
+import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.quiz.QuizUpdateResponseDTO;
 import org.sxy.optimus.module.Quiz;
 
@@ -17,4 +18,6 @@ public interface QuizMapper {
     QuizCreatedDTO toQuizCreateDTO(Quiz quiz);
 
     QuizUpdateResponseDTO toQuizUpdateResponseDTO(Quiz quiz);
+
+    QuizDisplayDTO quizToQuizDisplayDTO(Quiz quiz);
 }

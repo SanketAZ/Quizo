@@ -3,6 +3,7 @@ package org.sxy.optimus.module;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.sxy.optimus.enums.QuizStatus;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -35,6 +36,9 @@ public class Quiz {
 
     @Column(name = "start_time")
     private Instant startTime;
+
+    @Column(name = "status")
+    private String status = QuizStatus.NOT_STARTED.toString();
 
     @CreationTimestamp
     @Column(name = "created_at",updatable = false,nullable = false)
@@ -160,5 +164,13 @@ public class Quiz {
                 ", durationSec=" + durationSec +
                 ", startTime=" + startTime +
                 '}';
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

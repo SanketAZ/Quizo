@@ -3,17 +3,28 @@ package org.sxy.optimus.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.sxy.optimus.dto.PageRequestDTO;
+import org.sxy.optimus.dto.PageResponse;
+import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
+import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.mapper.RoomMapper;
+import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.Room;
 import org.sxy.optimus.module.RoomQuiz;
 import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
+import org.sxy.optimus.utility.PageRequestHelper;
+import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
 import java.util.HashSet;
@@ -33,13 +44,16 @@ public class RoomService {
 
     private final RoomMapper roomMapper;
 
+    private final QuizMapper quizMapper;
+
     final static Logger log = LoggerFactory.getLogger(RoomService.class);
     @Autowired
     private QuizRepo quizRepo;
 
 
-    public RoomService(RoomMapper roomMapper) {
+    public RoomService(RoomMapper roomMapper, QuizMapper quizMapper) {
         this.roomMapper = roomMapper;
+        this.quizMapper = quizMapper;
     }
 
 
