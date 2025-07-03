@@ -14,4 +14,5 @@ import java.util.UUID;
 
 public interface RoomRepo extends JpaRepository<Room, UUID> {
     boolean existsByRoomIdAndOwnerUserId(UUID roomId, UUID ownerUserId);
+    Page<Room> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
 }

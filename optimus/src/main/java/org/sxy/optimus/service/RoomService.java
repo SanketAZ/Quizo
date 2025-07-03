@@ -137,4 +137,25 @@ public class RoomService {
         return resDTO;
 
     }
+
+    //Getting Created Rooms for Owner
+    public PageResponse<RoomDisplayDTO> fetchRoomsForOwner(UUID userId,PageRequestDTO pageRequestDTO){
+        //validating the PageRequestDTO with valid order by fields
+        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt"));
+        if(!errors.isEmpty()){
+            throw new ValidationException("Validation failed PageRequestDTO",errors);
+        }
+
+        Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
+
+        Page<Room> roomPage=roomRepo.findByOwnerUserId(userId,pageable);
+
+        List<RoomDisplayDTO> list = roomPage.getContent().stream()
+                .map(roomMapper::toRoomDisplayDTOForOwner)
+                .toList();
+
+        log.info("Owner with id {} fetched the rooms", userId);
+
+        return PageResponse.of(list,roomPage);
+    }
 }

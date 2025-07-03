@@ -78,12 +78,24 @@ public class RoomController {
 
     //Get all quizzes present in the room just passing some quiz details
     @PostMapping("/{roomId}/quizzes")
-    private ResponseEntity<PageResponse<QuizDisplayDTO>> fetchRoomQuizzesForOwner(@PathVariable String roomId,@RequestParam(value = "status",required = true)String status, @RequestBody PageRequestDTO pageRequestDTO) {
+    public ResponseEntity<PageResponse<QuizDisplayDTO>> fetchRoomQuizzesForOwner(@PathVariable String roomId,@RequestParam(value = "status",required = true)String status, @RequestBody PageRequestDTO pageRequestDTO) {
         UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        PageResponse<QuizDisplayDTO> requireQuizzes=quizService.fetchOwnerQuizzesForRoom(userId,status,UUID.fromString(roomId), pageRequestDTO);
+        PageResponse<QuizDisplayDTO> requiredQuizzes=quizService.fetchOwnerQuizzesForRoom(userId,status,UUID.fromString(roomId), pageRequestDTO);
         return ResponseEntity
                 .ok()
-                .body(requireQuizzes);
+                .body(requiredQuizzes);
     }
+
+    //All Rooms For given owner
+    @PostMapping ("/owner")
+    public ResponseEntity<PageResponse<RoomDisplayDTO>> fetchRoomsForQwner(@RequestBody PageRequestDTO pageRequestDTO){
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        roomService.fetchRoomsForOwner(userId,pageRequestDTO);
+        PageResponse<RoomDisplayDTO> requiredRooms=roomService.fetchRoomsForOwner(userId,pageRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(requiredRooms);
+    }
+
 
 }

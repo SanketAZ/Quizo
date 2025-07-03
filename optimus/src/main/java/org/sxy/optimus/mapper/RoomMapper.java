@@ -4,10 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.stereotype.Service;
-import org.sxy.optimus.dto.room.RoomCreateReqDTO;
-import org.sxy.optimus.dto.room.RoomCreateResDTO;
-import org.sxy.optimus.dto.room.RoomDTO;
-import org.sxy.optimus.dto.room.RoomUpdateResDTO;
+import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.module.Room;
 import org.sxy.optimus.module.RoomQuiz;
 
@@ -28,5 +25,8 @@ public interface RoomMapper {
 
     @Mapping(target = "quizIds",ignore = true)
     RoomDTO toRoomDTO(Room room);
+
+    @Mapping(target = "ownerUserId",ignore = true)
+    RoomDisplayDTO toRoomDisplayDTOForOwner(Room room);
 
 }
