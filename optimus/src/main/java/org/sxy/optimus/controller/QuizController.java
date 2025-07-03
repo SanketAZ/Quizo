@@ -6,6 +6,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.sxy.optimus.dto.PageRequestDTO;
+import org.sxy.optimus.dto.PageResponse;
+import org.sxy.optimus.dto.question.QuestionDTO;
 import org.sxy.optimus.dto.quiz.QuizCreateDTO;
 import org.sxy.optimus.dto.quiz.QuizCreatedDTO;
 import org.sxy.optimus.dto.quiz.QuizUpdateRequestDTO;
@@ -13,6 +16,8 @@ import org.sxy.optimus.dto.quiz.QuizUpdateResponseDTO;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuizService;
 import org.sxy.optimus.utility.UserContextHolder;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/quiz")
@@ -50,6 +55,18 @@ public class QuizController {
         QuizUpdateResponseDTO quizUpdateResponseDTO=quizService.updateQuiz(id,quizUpdateRequestDTO);
 
         return ResponseEntity.ok().body(quizUpdateResponseDTO);
+    }
+
+    //Fetching questions in the quiz for owner
+    @PostMapping("/{quizId}/questions")
+    public ResponseEntity<PageResponse<QuestionDTO>> fetchQuizQuestionsForOwner(@PathVariable("quizId")String quizId, @RequestBody PageRequestDTO pageRequestDTO){
+
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        UUID quizID=UUID.fromString(quizId);
+        PageResponse<QuestionDTO> response=quizService.getQuizQuestionsForOwner(userId,quizID,pageRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
     }
 
 }

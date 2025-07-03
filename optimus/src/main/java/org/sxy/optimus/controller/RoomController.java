@@ -88,9 +88,8 @@ public class RoomController {
 
     //All Rooms For given owner
     @PostMapping ("/owner")
-    public ResponseEntity<PageResponse<RoomDisplayDTO>> fetchRoomsForQwner(@RequestBody PageRequestDTO pageRequestDTO){
+    public ResponseEntity<PageResponse<RoomDisplayDTO>> fetchRoomsForOwner(@RequestBody PageRequestDTO pageRequestDTO){
         UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        roomService.fetchRoomsForOwner(userId,pageRequestDTO);
         PageResponse<RoomDisplayDTO> requiredRooms=roomService.fetchRoomsForOwner(userId,pageRequestDTO);
         return ResponseEntity
                 .ok()

@@ -8,14 +8,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
+import org.sxy.optimus.dto.question.QuestionDTO;
 import org.sxy.optimus.dto.quiz.*;
-import org.sxy.optimus.enums.QuizStatus;
 import org.sxy.optimus.exception.QuizDoesNotExistsException;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
+import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
+import org.sxy.optimus.projection.QuestionWithOptionsProjection;
+import org.sxy.optimus.repo.QuestionRepo;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
 import org.sxy.optimus.utility.PageRequestHelper;
@@ -37,12 +40,19 @@ public class QuizService {
     @Autowired
     private RoomRepo roomRepo;
 
+    @Autowired
+    private QuestionRepo questionRepo;
+
     private final QuizMapper quizMapper;
 
     private static final Logger log = LoggerFactory.getLogger(QuizService.class);
 
-    public QuizService(QuizMapper quizMapper) {
+
+    private final QuestionMapper questionMapper;
+
+    public QuizService(QuizMapper quizMapper, QuestionMapper questionMapper) {
         this.quizMapper = quizMapper;
+        this.questionMapper = questionMapper;
     }
 
     //quiz creation method
@@ -115,5 +125,33 @@ public class QuizService {
         log.info("User with id {} fetched the quizzes for room with id {}",userID,roomID);
 
         return PageResponse.of(quizDisplayDTOs,quizPage);
+    }
+
+    public PageResponse<QuestionDTO> getQuizQuestionsForOwner(UUID userId, UUID quizID, PageRequestDTO pageRequestDTO){
+        //validating the PageRequestDTO with valid order by fields
+        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt"));
+        if(!errors.isEmpty()){
+            throw new ValidationException("Validation failed PageRequestDTO",errors);
+        }
+
+        if(!quizRepo.existsById(quizID)){
+            throw new ResourceDoesNotExitsException("Quiz","QuizID",quizID.toString());
+        }
+
+        if(!quizRepo.existsByQuizIdAndCreatorUserId(quizID,userId)){
+            throw new UnauthorizedActionException("User with id "+userId +"is not authorized to fetch the questions");
+        }
+
+        Pageable pageable=PageRequestHelper.toPageable(pageRequestDTO);
+
+        Page<QuestionWithOptionsProjection> questionPage=questionRepo.findQuestionWithOptionsByQuizId(quizID,pageable);
+
+        List<QuestionDTO> questionDTOList=questionPage.getContent().stream()
+                                .map(questionMapper::toQuestionDTO)
+                                .toList();
+
+        log.info("User with id {} fetched the questions for quiz with id {}",userId,quizID);
+
+        return PageResponse.of(questionDTOList,questionPage);
     }
 }

@@ -25,4 +25,7 @@ public interface QuizRepo extends JpaRepository<Quiz, UUID> {
     WHERE rq.room.roomId =:roomId AND q.status=:status
     """)
     Page<Quiz> getQuizDisplayDTOByRoomId(@Param("roomId") UUID roomId, @Param("status") String status , Pageable pageable);
+
+    boolean existsByQuizIdAndCreatorUserId(UUID quizId, UUID creatorUserId);
+
 }
