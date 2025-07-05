@@ -36,6 +36,9 @@ public class Room {
     @OneToMany(mappedBy = "room",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private Set<RoomQuiz> roomQuizes;
 
+    @OneToMany(mappedBy = "room",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
+    private Set<RoomUser> roomUsers;
+
     public UUID getRoomId() {
         return roomId;
     }
@@ -113,5 +116,13 @@ public class Room {
     @Override
     public int hashCode() {
         return Objects.hash(roomId, ownerUserId);
+    }
+
+    public void setRoomUsers(Set<RoomUser> roomUsers) {
+        this.roomUsers = roomUsers;
+    }
+
+    public Set<RoomUser> getRoomUsers() {
+        return roomUsers;
     }
 }

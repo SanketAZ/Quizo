@@ -1,5 +1,8 @@
 package org.sxy.optimus.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,17 +23,18 @@ import org.sxy.optimus.mapper.RoomMapper;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.Room;
 import org.sxy.optimus.module.RoomQuiz;
+import org.sxy.optimus.module.RoomUser;
 import org.sxy.optimus.module.compKey.RoomQuizId;
+import org.sxy.optimus.module.compKey.RoomUserId;
+import org.sxy.optimus.projection.RoomUserIdProjection;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
+import org.sxy.optimus.repo.RoomUserRepo;
 import org.sxy.optimus.utility.PageRequestHelper;
 import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +42,13 @@ public class RoomService {
 
     @Autowired
     private RoomRepo roomRepo;
+
+    @Autowired
+    private RoomUserRepo roomUserRepo;
+
+    @PersistenceContext
+    private EntityManager em;
+
 
     @Autowired
     private ValidationService validationService;
@@ -157,5 +168,50 @@ public class RoomService {
         log.info("Owner with id {} fetched the rooms", userId);
 
         return PageResponse.of(list,roomPage);
+    }
+
+    //Method to add users in the particular room
+    @Transactional
+    public String addUsersToRoom(UUID userId,UUID roomId,AddUsersToRoomRequestDTO addUsersToRoomRequestDTO){
+        //Fetch the Room
+        Room room=roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceDoesNotExitsException("Room","roomId",roomId.toString()));
+
+
+        //validating user has access to the quiz
+        if(!userId.toString().equals(room.getOwnerUserId().toString())){
+            throw new UnauthorizedActionException("User with id "+ userId +"is not authorized to update the room");
+        }
+
+        // build list of all desired composite‐IDs
+        List<RoomUserId> allIds = addUsersToRoomRequestDTO.getUserIds().stream()
+                .map(s -> new RoomUserId(roomId, UUID.fromString(s)))
+                .toList();
+
+        // single query to fetch whaťs already there
+        Set<RoomUserId> existing = new HashSet<>(
+                roomUserRepo.findExistingRoomUsers(allIds)
+        );
+
+        // filter out already-present
+        List<RoomUser> toInsert = allIds.stream()
+                .filter(id -> !existing.contains(id))
+                .map(id -> {
+                    RoomUser ru = new RoomUser();
+                    ru.setRoomUserId(id);
+                    ru.setRoom(room);
+                    return ru;
+                })
+                .toList();
+
+        //*
+        for (RoomUser ru : toInsert) {
+            em.persist(ru);}
+        em.flush();
+
+
+        log.info("Users added to Room {} By User {}", roomId, userId);
+
+        return "Users are added to the room";
     }
 }

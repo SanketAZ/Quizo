@@ -96,5 +96,14 @@ public class RoomController {
                 .body(requiredRooms);
     }
 
+    //Adding users to the given room
+    @PostMapping("/{roomId}/users")
+    public ResponseEntity<String> addUsersToRoom(@PathVariable("roomId")String roomId, @RequestBody AddUsersToRoomRequestDTO requestDTO){
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        String response=roomService.addUsersToRoom(userId,UUID.fromString(roomId),requestDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
 
 }
