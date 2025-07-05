@@ -106,4 +106,14 @@ public class RoomController {
                 .body(response);
     }
 
+    //Remove users from the given room
+    @DeleteMapping("/{roomId}/users")
+    public ResponseEntity<String> removeRoomUsers(@PathVariable("roomId")String roomId, @RequestBody RemoveRoomUsersReqDTO requestDTO){
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        String response=roomService.removeRoomUsers(userId,UUID.fromString(roomId),requestDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
+
 }

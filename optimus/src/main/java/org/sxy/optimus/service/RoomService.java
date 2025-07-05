@@ -214,4 +214,24 @@ public class RoomService {
 
         return "Users are added to the room";
     }
+
+    //Remove users from the room
+    public String removeRoomUsers(UUID userId,UUID roomId,RemoveRoomUsersReqDTO reqDTO){
+        //Fetch the Room
+        Room room=roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceDoesNotExitsException("Room","roomId",roomId.toString()));
+
+        //validating user has access to the quiz
+        if(!userId.toString().equals(room.getOwnerUserId().toString()))
+            throw new UnauthorizedActionException("User with id "+ userId +"is not authorized to update the room");
+
+        List<RoomUserId>idsToRemove=reqDTO.getUserIds().stream().map(s -> new RoomUserId(roomId,UUID.fromString(s))).toList();
+
+        roomUserRepo.deleteRoomUsersByIds(idsToRemove);
+
+        log.info("User {} deleted users from room {}",userId, roomId);
+
+        return "Users Removed form the Room";
+
+    }
 }
