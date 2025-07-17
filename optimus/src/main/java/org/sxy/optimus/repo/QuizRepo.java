@@ -28,4 +28,14 @@ public interface QuizRepo extends JpaRepository<Quiz, UUID> {
 
     boolean existsByQuizIdAndCreatorUserId(UUID quizId, UUID creatorUserId);
 
+
+    @Query("""
+    SELECT DISTINCT q
+    FROM Quiz q
+    JOIN FETCH q.questions que
+    JOIN fetch que.options op
+    WHERE q.quizId=:quizId
+    """)
+    Quiz getQuizWithAllQuestions(@Param("quizId") UUID quizId);
+
 }

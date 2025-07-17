@@ -3,6 +3,7 @@ package org.sxy.optimus.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisHash;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.option.OptionRequestDTO;
 import org.sxy.optimus.dto.option.OptionUpdateReqDTO;
@@ -122,6 +123,7 @@ public class QuestionService {
             }
         }
 
+        //removing options which are not present in request
         question.getOptions().removeIf(o->!incomingIds.contains(o.getOptionId()));
 
         //add newly created options to question

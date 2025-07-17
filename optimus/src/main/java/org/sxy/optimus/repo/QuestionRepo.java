@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface QuestionRepo extends JpaRepository<Question, UUID> {
     Question findQuestionByQuestionId(UUID questionId);
 
-    @Query("SELECT q FROM Question q JOIN FETCH q.options WHERE q.quiz.quizId=:quizId")
+    @Query("SELECT DISTINCT q FROM Question q JOIN FETCH q.options WHERE q.quiz.quizId=:quizId")
     Page<QuestionWithOptionsProjection> findQuestionWithOptionsByQuizId(@Param("quizId") UUID quizId, Pageable pageable);
 
 }
