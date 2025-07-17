@@ -16,4 +16,7 @@ public interface QuestionRepo extends JpaRepository<Question, UUID> {
     @Query("SELECT DISTINCT q FROM Question q JOIN FETCH q.options WHERE q.quiz.quizId=:quizId")
     Page<QuestionWithOptionsProjection> findQuestionWithOptionsByQuizId(@Param("quizId") UUID quizId, Pageable pageable);
 
+    //Total number of questions for give quiz
+    @Query("SELECT count (*) FROM Question q WHERE q.quiz.quizId=:quizId")
+    Integer countByQuizId(@Param("quizId")UUID quizId);
 }

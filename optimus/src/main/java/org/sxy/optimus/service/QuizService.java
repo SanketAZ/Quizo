@@ -57,7 +57,7 @@ public class QuizService {
 
     //quiz creation method
     public QuizCreatedDTO createQuiz(QuizCreateDTO quizCreateDTO){
-
+       quizCreateDTO.setQuestionCount(0);
        Quiz quiz=quizMapper.toQuiz(quizCreateDTO);
        Quiz createdQuiz=quizRepo.save(quiz);
 

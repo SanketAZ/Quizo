@@ -1,5 +1,6 @@
 package org.sxy.optimus.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.sxy.optimus.dto.question.QuestionCreateResDTO;
 import org.sxy.optimus.dto.question.QuestionRequestDTO;
 import org.sxy.optimus.dto.question.QuestionUpdateReqDTO;
 import org.sxy.optimus.dto.question.QuestionUpdateResDTO;
+import org.sxy.optimus.dto.quiz.QuizQuestionsAddResDTO;
 import org.sxy.optimus.exception.QuestionDoesNotExistsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
@@ -20,6 +22,7 @@ import org.sxy.optimus.module.Option;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.repo.QuestionRepo;
+import org.sxy.optimus.repo.QuizRepo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +39,9 @@ public class QuestionService {
     private QuizService quizService;
 
     @Autowired
+    private QuizRepo quizRepo;
+
+    @Autowired
     private ValidationService validationService;
 
     private final QuestionMapper questionMapper;
@@ -48,9 +54,10 @@ public class QuestionService {
     }
 
     //Method will add the question to the provided quiz
-    public List<QuestionCreateResDTO> addQuestionsToQuiz(UUID userId, UUID quizId, List<QuestionRequestDTO> questions) {
+    @Transactional
+    public QuizQuestionsAddResDTO addQuestionsToQuiz(UUID userId, UUID quizId, List<QuestionRequestDTO> questions) {
 
-        //validation of the questions list
+        //validation of the question list
         if(!validationService.validateQuestionRequestDTOs(questions).isEmpty()){
             throw new ValidationException("Validation failed for one or more questions",validationService.validateQuestionRequestDTOs(questions));
         }
@@ -62,7 +69,7 @@ public class QuestionService {
             throw new UnauthorizedActionException("User with id "+userId +"is not authorized to update the quiz");
         }
 
-        //Mapping to get list of Quest ions
+        //Mapping to get a list of Quest ions
         List<Question> questionToSave=questionMapper.toQuestionList(questions);
 
         //Imp step
@@ -77,9 +84,20 @@ public class QuestionService {
         //Saving the questions
         List<Question> savedQuestions=questionRepo.saveAll(questionToSave);
 
+        //saving the number of questions
+        int numOfQuestions=questionRepo.countByQuizId(quizId);
+        quiz.setQuestionCount(numOfQuestions);
+        quizRepo.save(quiz);
+
         log.info("Questions added to quiz :{}",quiz.getQuizId());
 
-        return questionMapper.toQuestionCreateResDTOList(savedQuestions);
+        //Generating the response dto
+        QuizQuestionsAddResDTO respDTO=new QuizQuestionsAddResDTO();
+        respDTO.setTotalQuestions(numOfQuestions);
+        respDTO.setTotalQuestionsAddedNow(savedQuestions.size());
+        respDTO.setQuestionsAdded(questionMapper.toQuestionCreateResDTOList(savedQuestions));
+
+        return respDTO;
     }
 
     public QuestionUpdateResDTO updateQuestion(UUID userId, UUID questionId, QuestionUpdateReqDTO questionUpdateReqDTO) {

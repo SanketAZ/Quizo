@@ -11,6 +11,7 @@ import org.sxy.optimus.dto.question.QuestionCreateResDTO;
 import org.sxy.optimus.dto.question.QuestionRequestDTO;
 import org.sxy.optimus.dto.question.QuestionUpdateReqDTO;
 import org.sxy.optimus.dto.question.QuestionUpdateResDTO;
+import org.sxy.optimus.dto.quiz.QuizQuestionsAddResDTO;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuestionService;
 import org.sxy.optimus.utility.UserContextHolder;
@@ -29,7 +30,7 @@ public class QuestionController {
     //Adding multiple questions to quiz
     @PostMapping("/{userId}/{quizId}")
     @Operation(summary = "Adding Multiple Questions to quiz")
-    public ResponseEntity<List<QuestionCreateResDTO>> addQuestion(@PathVariable(name = "userId") UUID userId,
+    public ResponseEntity<QuizQuestionsAddResDTO> addQuestion(@PathVariable(name = "userId") UUID userId,
                                                                   @PathVariable(name = "quizId") UUID quizId,
                                                                   @RequestBody @Valid List< @Valid QuestionRequestDTO> questions) {
 
@@ -39,11 +40,11 @@ public class QuestionController {
         }
 
         //Adding the questions
-        List<QuestionCreateResDTO> addedQuestions = questionService.addQuestionsToQuiz(userId, quizId, questions);
+        QuizQuestionsAddResDTO resDTO = questionService.addQuestionsToQuiz(userId, quizId, questions);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(addedQuestions);
+                .body(resDTO);
 
     }
 
