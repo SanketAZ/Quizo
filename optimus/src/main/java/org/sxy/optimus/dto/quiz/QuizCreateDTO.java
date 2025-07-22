@@ -22,27 +22,15 @@ public class QuizCreateDTO {
     @Max(3600)
     private Integer durationSec;
 
-    @NotBlank(message = "start time is mandatory")
-    private String startTime;
-
     public QuizCreateDTO() {
     }
 
-    public QuizCreateDTO(String creatorUserId, String startTime, Integer durationSec, Integer questionCount, String description, String title) {
+    public QuizCreateDTO(String creatorUserId, Integer durationSec, Integer questionCount, String description, String title) {
         this.creatorUserId = creatorUserId;
-        this.startTime = startTime;
         this.durationSec = durationSec;
         this.questionCount = questionCount;
         this.description = description;
         this.title = title;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
     }
 
     public Integer getDurationSec() {

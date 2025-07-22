@@ -10,10 +10,7 @@ import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.question.QuestionDTO;
 import org.sxy.optimus.dto.quiz.*;
-import org.sxy.optimus.exception.QuizDoesNotExistsException;
-import org.sxy.optimus.exception.ResourceDoesNotExitsException;
-import org.sxy.optimus.exception.UnauthorizedActionException;
-import org.sxy.optimus.exception.ValidationException;
+import org.sxy.optimus.exception.*;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
@@ -45,6 +42,10 @@ public class QuizService {
 
     private final QuizMapper quizMapper;
 
+    private static final int MIN_BUFFER_SECONDS = 300;
+
+    private static final int MIN_BUFFER_SECONDS_FOR_UPDATE = 600;
+
     private static final Logger log = LoggerFactory.getLogger(QuizService.class);
 
 
@@ -71,6 +72,8 @@ public class QuizService {
         Quiz quiz=quizRepo.findById(UUID.fromString(quizID))
                 .orElseThrow(() -> new QuizDoesNotExistsException("quizId",quizID));
 
+        QuizValidator.assertCanUpdateBeforeStart(quiz.getStartTime(),Instant.now(),MIN_BUFFER_SECONDS_FOR_UPDATE);
+
         if(!quiz.getCreatorUserId().toString().equals(quizUpdateRequestDTO.getCreatorUserId())){
             throw new UnauthorizedActionException("User with id "+quizUpdateRequestDTO.getCreatorUserId() +"is not authorized to update this quiz");
         }
@@ -79,7 +82,6 @@ public class QuizService {
         quiz.setDescription(quizUpdateRequestDTO.getDescription());
         quiz.setDurationSec(quizUpdateRequestDTO.getDurationSec());
         quiz.setTitle(quizUpdateRequestDTO.getTitle());
-        quiz.setStartTime(Instant.parse(quizUpdateRequestDTO.getStartTime()));
         Quiz updatedQuiz=quizRepo.save(quiz);
         log.info("Quiz updated :{}",updatedQuiz);
 
@@ -155,5 +157,31 @@ public class QuizService {
         return PageResponse.of(questionDTOList,questionPage);
     }
 
+    //This method is to assign the quiz Start time
+    public QuizStartTimeResDTO assignStartTimeToQuiz(UUID quizID,QuizStartTimeReqDTO quizStartTimeReqDTO){
+        UUID userID=UUID.fromString(quizStartTimeReqDTO.getCreatorUserId());
+        Quiz quiz=getQuiz(quizID);
+
+        if(!quizRepo.existsByQuizIdAndCreatorUserId(quizID,userID)){
+            throw new UnauthorizedActionException("User with id "+userID +"is not authorized to set the start time for quiz: "+quizID);
+        }
+
+        String startTimeStr = quizStartTimeReqDTO.getStartTime();
+        Instant startTime = null;
+        Instant currentTime = Instant.now();
+
+        if(startTimeStr!=null && !startTimeStr.isBlank()){
+            startTime = Instant.parse(startTimeStr);
+            QuizValidator.assertValidStartTime(currentTime,startTime,MIN_BUFFER_SECONDS);
+        }
+
+        //setting start time
+        quiz.setStartTime(startTime);
+        Quiz savedQuiz=quizRepo.save(quiz);
+
+        log.info("Successfully updated start time for quizId={} to startTime={}", quizID, startTime);
+
+        return quizMapper.toQuizStartTimeResDTO(savedQuiz);
+    }
 
 }

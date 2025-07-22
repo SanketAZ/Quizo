@@ -34,7 +34,7 @@ public class Quiz {
     @Column(name = "duration_sec")
     private Integer durationSec;
 
-    @Column(name = "start_time")
+    @Column(name = "start_time",nullable = true)
     private Instant startTime;
 
     @Column(name = "status")

@@ -22,19 +22,15 @@ public class QuizUpdateRequestDTO {
     @Max(3600)
     private Integer durationSec;
 
-    @NotBlank(message = "start time is mandatory")
-    private String startTime;
-
     public QuizUpdateRequestDTO() {
     }
 
-    public QuizUpdateRequestDTO(String creatorUserId, String title, String description, Integer questionCount, Integer durationSec, String startTime) {
+    public QuizUpdateRequestDTO(String creatorUserId, String title, String description, Integer questionCount, Integer durationSec) {
         this.creatorUserId = creatorUserId;
         this.title = title;
         this.description = description;
         this.questionCount = questionCount;
         this.durationSec = durationSec;
-        this.startTime = startTime;
     }
 
     public String getCreatorUserId() {
@@ -77,11 +73,4 @@ public class QuizUpdateRequestDTO {
         this.durationSec = durationSec;
     }
 
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
 }

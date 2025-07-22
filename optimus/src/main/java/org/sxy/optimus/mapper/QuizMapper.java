@@ -19,4 +19,6 @@ public interface QuizMapper {
     QuizDisplayDTO quizToQuizDisplayDTO(Quiz quiz);
 
     QuizDetailCacheDTO toQuizDetailCacheDTO(Quiz quiz);
+
+    QuizStartTimeResDTO toQuizStartTimeResDTO(Quiz quiz);
 }

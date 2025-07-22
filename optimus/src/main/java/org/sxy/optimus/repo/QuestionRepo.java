@@ -8,10 +8,13 @@ import org.springframework.data.repository.query.Param;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface QuestionRepo extends JpaRepository<Question, UUID> {
-    Question findQuestionByQuestionId(UUID questionId);
+
+    @Query("SELECT q FROM Question q JOIN FETCH q.quiz WHERE q.questionId=:questionId")
+    Optional<Question> findQuestionByQuestionIdWithQuiz(UUID questionId);
 
     @Query("SELECT DISTINCT q FROM Question q JOIN FETCH q.options WHERE q.quiz.quizId=:quizId")
     Page<QuestionWithOptionsProjection> findQuestionWithOptionsByQuizId(@Param("quizId") UUID quizId, Pageable pageable);

@@ -23,7 +23,9 @@ import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.repo.QuestionRepo;
 import org.sxy.optimus.repo.QuizRepo;
+import org.sxy.optimus.utility.QuizValidator;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,6 +45,8 @@ public class QuestionService {
 
     @Autowired
     private ValidationService validationService;
+
+    private static final int MIN_BUFFER_SECONDS_FOR_UPDATE = 600;
 
     private final QuestionMapper questionMapper;
 
@@ -64,6 +68,8 @@ public class QuestionService {
 
         //fetch the quiz
         Quiz quiz=quizService.getQuiz(quizId);
+
+        QuizValidator.assertCanUpdateBeforeStart(quiz.getStartTime(), Instant.now(),MIN_BUFFER_SECONDS_FOR_UPDATE);
 
         if(!quiz.getCreatorUserId().equals(userId)) {
             throw new UnauthorizedActionException("User with id "+userId +"is not authorized to update the quiz");
@@ -108,17 +114,16 @@ public class QuestionService {
         }
 
         //fetch the Question
-        Question question=questionRepo.findQuestionByQuestionId(questionId);
-
-        //checking question is present or not
-        if(question==null){
-            throw new QuestionDoesNotExistsException("QuestionId",questionId.toString());
-        }
+        Question question=questionRepo.findQuestionByQuestionIdWithQuiz(questionId)
+                .orElseThrow(() -> new QuestionDoesNotExistsException("QuestionId",questionId.toString()));
 
         //validating user has access to the quiz
         if(!question.getQuiz().getCreatorUserId().equals(userId)){
             throw new UnauthorizedActionException("User with id "+userId +"is not authorized to update the question");
         }
+
+        Quiz quiz=question.getQuiz();
+        QuizValidator.assertCanUpdateBeforeStart(quiz.getStartTime(), Instant.now(),MIN_BUFFER_SECONDS_FOR_UPDATE);
 
         //update question fields
         question.setWeight(questionUpdateReqDTO.getWeight());

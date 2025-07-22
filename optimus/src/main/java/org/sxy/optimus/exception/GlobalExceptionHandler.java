@@ -24,7 +24,6 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         });
 
-
         return ResponseEntity.badRequest().body(errors);
     }
 
@@ -130,6 +129,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String,Object>> handleIllegalStateException(IllegalStateException ex){
+        Map<String,Object> error = new HashMap<String,Object>();
+        error.put("message", ex.getMessage());
+
+        log.warn(ex.getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(QuizStartTimeException.class)
+    public ResponseEntity<Map<String,Object>> handleInvalidQuizStartTimeException(QuizStartTimeException ex){
         Map<String,Object> error = new HashMap<String,Object>();
         error.put("message", ex.getMessage());
 
