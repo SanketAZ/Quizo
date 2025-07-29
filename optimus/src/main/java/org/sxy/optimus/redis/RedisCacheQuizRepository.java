@@ -46,7 +46,7 @@ public class RedisCacheQuizRepository {
 
     //This method is to upload the quiz detail to redis
     public void uploadQuizDetails(@NotNull QuizDetailCacheDTO quizDetailCacheDTO,@Min(1) Long ttlInSeconds)  throws Exception{
-        String key=formKey(List.of("quiz", quizDetailCacheDTO.getQuizId(), "detail"));
+        String key=formKey(List.of("quiz","roomId",quizDetailCacheDTO.getRoomId(), "quizId",quizDetailCacheDTO.getQuizId(), "detail"));
         long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         try {
@@ -62,9 +62,9 @@ public class RedisCacheQuizRepository {
     }
 
     //This method is used to upload the quiz question to redis using hash
-    public void uploadQuizQuestions(@NotEmpty List<QuestionCacheDTO>questions, @NotNull UUID quizID,@Min(1) Long ttlInSeconds) throws Exception{
+    public void uploadQuizQuestions(@NotEmpty List<QuestionCacheDTO>questions, @NotNull UUID quizID,@NotNull UUID roomId,@Min(1) Long ttlInSeconds) throws Exception{
 
-        String Key=formKey(List.of("quiz",quizID.toString(),"questions"));
+        String Key=formKey(List.of("quiz","roomId",roomId.toString(),"quizId",quizID.toString(),"questions"));
         long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         Map<String, QuestionCacheDTO> mapOfQuestionsQuestions = mapQuestionsById(questions);

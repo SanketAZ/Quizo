@@ -4,6 +4,8 @@ public class QuizDetailCacheDTO {
 
         private String quizId;
 
+        private String roomId;
+
         private String creatorUserId;
 
         private String title;
@@ -80,5 +82,13 @@ public class QuizDetailCacheDTO {
 
     public void setCreatorUserId(String creatorUserId) {
         this.creatorUserId = creatorUserId;
+    }
+
+    public String getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(String roomId) {
+        this.roomId = roomId;
     }
 }

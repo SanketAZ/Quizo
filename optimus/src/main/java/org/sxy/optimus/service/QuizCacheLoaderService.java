@@ -7,11 +7,14 @@ import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.question.QuestionCacheDTO;
 import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
+import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
+import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.redis.RedisCacheQuizRepository;
 import org.sxy.optimus.repo.QuizRepo;
+import org.sxy.optimus.repo.RoomQuizRepo;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,6 +32,9 @@ public class QuizCacheLoaderService {
     @Autowired
     private QuizRepo quizRepo;
 
+    @Autowired
+    private RoomQuizRepo roomQuizRepo;
+
     private final QuestionMapper questionMapper;
 
     private final QuizMapper quizMapper;
@@ -40,9 +46,13 @@ public class QuizCacheLoaderService {
 
     //method to upload the quiz to redis before quiz starts
     //Retry logic will be implemented later
-    public void preloadQuizToRedis(UUID quizId) {
+    public void preloadQuizToRedis(UUID quizId,UUID roomId) {
         if (!quizRepo.existsById(quizId)) {
             throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
+        }
+
+        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+            throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
         }
 
         if ( cacheQuizRepository.isQuizPreloaded(quizId) ) {
@@ -52,7 +62,9 @@ public class QuizCacheLoaderService {
         //Fetching quiz from the database
         Quiz quiz= quizRepo.getQuizWithAllQuestions(quizId);
 
+        //Setting the QuizDetailCacheDTO
         QuizDetailCacheDTO quizDetailCacheDTO = quizMapper.toQuizDetailCacheDTO(quiz);
+        quizDetailCacheDTO.setRoomId(roomId.toString());
 
         List<QuestionCacheDTO> questionsToCache=quiz.getQuestions()
                 .stream()
@@ -69,7 +81,7 @@ public class QuizCacheLoaderService {
             cacheQuizRepository.uploadQuizDetails(quizDetailCacheDTO,ttlForQuiz);
 
             //Uploading the questions of quiz to redis
-            cacheQuizRepository.uploadQuizQuestions(questionsToCache,quizId,ttlForQuiz);
+            cacheQuizRepository.uploadQuizQuestions(questionsToCache,quizId,roomId,ttlForQuiz);
         }catch (Exception e){
             log.error("Exception occurred while uploading the quiz to redis {}",e.getMessage());
         }
