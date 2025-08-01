@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.sxy.optimus.dto.pojo.RoomUserDetails;
 import org.sxy.optimus.dto.question.QuestionCacheDTO;
 import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
 
@@ -47,6 +48,24 @@ public class RedisConfig {
 
         //for values
         Jackson2JsonRedisSerializer<QuizDetailCacheDTO> serializer = new Jackson2JsonRedisSerializer<>(QuizDetailCacheDTO.class);
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
+
+        return template;
+    }
+
+    @Bean
+    @Qualifier("String-RoomUserDetails")
+    public RedisTemplate<String, RoomUserDetails> redisTemplateForRoomUserDetails(RedisConnectionFactory factory){
+        RedisTemplate<String, RoomUserDetails> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        //for key
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        //for value
+        Jackson2JsonRedisSerializer<RoomUserDetails> serializer = new Jackson2JsonRedisSerializer<>(RoomUserDetails.class);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
 

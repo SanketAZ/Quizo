@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
+import org.sxy.optimus.dto.pojo.RoomUserDetails;
 import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
@@ -27,6 +29,7 @@ import org.sxy.optimus.module.RoomUser;
 import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.module.compKey.RoomUserId;
 import org.sxy.optimus.projection.RoomUserIdProjection;
+import org.sxy.optimus.redis.RedisCacheRoomRepository;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
 import org.sxy.optimus.repo.RoomUserRepo;
@@ -34,11 +37,14 @@ import org.sxy.optimus.utility.PageRequestHelper;
 import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
+
+    final static Logger log = LoggerFactory.getLogger(RoomService.class);
 
     @Autowired
     private RoomRepo roomRepo;
@@ -49,6 +55,8 @@ public class RoomService {
     @PersistenceContext
     private EntityManager em;
 
+    @Autowired
+    private RedisCacheRoomRepository redisRoomRepository;
 
     @Autowired
     private ValidationService validationService;
@@ -57,7 +65,6 @@ public class RoomService {
 
     private final QuizMapper quizMapper;
 
-    final static Logger log = LoggerFactory.getLogger(RoomService.class);
     @Autowired
     private QuizRepo quizRepo;
 
@@ -234,4 +241,36 @@ public class RoomService {
         return "Users Removed form the Room";
 
     }
+
+    //This method is to upload all the users in the room to redis with ttl provided
+    public void cacheRoomUsersDetailToRedis(UUID roomId, Duration ttl){
+        //check room exists or not
+        if(!roomRepo.existsById(roomId)){
+            throw new ResourceDoesNotExitsException("Room","roomId",roomId.toString());
+        }
+
+        //fetch the users in room
+        List<UUID> userIds=roomUserRepo.findUserIdsInRoom(roomId);
+
+        if (userIds.isEmpty()){
+            log.info("No users found for room {}", roomId);
+            return;
+        }
+
+        //get the user details using there id
+        //This implementation will be modified later
+        List<RoomUserDetails>userDetailsToUpload=userIds.stream()
+                .map(uuid -> new RoomUserDetails(uuid.toString(),"username1"))
+                .toList();
+
+        try {
+            //upload the room users details to redis
+            redisRoomRepository.cacheRoomUserDetails(userDetailsToUpload,roomId,ttl.toSeconds());
+        }catch (DataAccessException e){
+            log.error("Exception occurred while uploading the room users details to redis {}",e.getMessage());
+        }
+
+        log.info("Cached {} users for room {} in Redis", userDetailsToUpload.size(), roomId);
+    }
+
 }

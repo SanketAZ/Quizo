@@ -20,6 +20,9 @@ public interface RoomUserRepo extends JpaRepository<RoomUser, UUID> {
     @Query("SELECT ru.roomUserId FROM RoomUser ru WHERE ru.roomUserId IN :ids")
     List<RoomUserId> findExistingRoomUsers(@Param("ids") List<RoomUserId> ids);
 
+    @Query("SELECT ru.roomUserId.userId FROM RoomUser ru where ru.roomUserId.roomId =:roomId")
+    List<UUID> findUserIdsInRoom(@Param("roomId") UUID roomId);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM RoomUser ru WHERE ru.roomUserId IN :ids")
