@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Repository
-public interface RoomUserRepo extends JpaRepository<RoomUser, UUID> {
+public interface RoomUserRepo extends JpaRepository<RoomUser, RoomUserId> {
 
     @Query("SELECT ru.roomUserId FROM RoomUser ru WHERE ru.roomUserId IN :ids")
     List<RoomUserId> findExistingRoomUsers(@Param("ids") List<RoomUserId> ids);

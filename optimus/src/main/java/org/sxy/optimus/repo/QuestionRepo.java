@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,4 +23,8 @@ public interface QuestionRepo extends JpaRepository<Question, UUID> {
     //Total number of questions for give quiz
     @Query("SELECT count (*) FROM Question q WHERE q.quiz.quizId=:quizId")
     Integer countByQuizId(@Param("quizId")UUID quizId);
+
+    //All questions id for give quiz
+    @Query("SELECT q.questionId FROM Question q WHERE q.quiz.quizId=:quizId")
+    List<UUID> findQuestionIdsByQuizId(@Param("quizId")UUID quizId);
 }
