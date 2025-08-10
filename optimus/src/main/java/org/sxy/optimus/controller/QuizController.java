@@ -76,4 +76,14 @@ public class QuizController {
                 .ok()
                 .body(response);
     }
+
+    @PostMapping("/{quizId}/question-sequence")
+    public ResponseEntity<QuizQuestionSequenceDTO> updateQuizQuestionsSequence(@PathVariable("quizId") String quizId,@RequestBody @Valid QuizQuestionSequenceDTO reqDTO) {
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        UUID quizID = UUID.fromString(quizId);
+        QuizQuestionSequenceDTO response = quizService.updateQuizQuestionSequence(userId,quizID,reqDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
 }

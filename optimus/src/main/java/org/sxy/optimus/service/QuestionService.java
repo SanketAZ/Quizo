@@ -21,9 +21,12 @@ import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.module.Option;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
+import org.sxy.optimus.module.QuizQuestionSequence;
 import org.sxy.optimus.repo.QuestionRepo;
+import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.utility.QuizValidator;
+import org.sxy.optimus.validation.ValidationResult;
 
 import java.time.Instant;
 import java.util.*;
@@ -44,6 +47,10 @@ public class QuestionService {
     private QuizRepo quizRepo;
 
     @Autowired
+    private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
+
+
+    @Autowired
     private ValidationService validationService;
 
     private static final int MIN_BUFFER_SECONDS_FOR_UPDATE = 600;
@@ -62,18 +69,20 @@ public class QuestionService {
     public QuizQuestionsAddResDTO addQuestionsToQuiz(UUID userId, UUID quizId, List<QuestionRequestDTO> questions) {
 
         //validation of the question list
-        if(!validationService.validateQuestionRequestDTOs(questions).isEmpty()){
-            throw new ValidationException("Validation failed for one or more questions",validationService.validateQuestionRequestDTOs(questions));
+        List<ValidationResult> errors = validationService.validateQuestionRequestDTOs(questions);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("Validation failed", errors);
         }
 
         //fetch the quiz
         Quiz quiz=quizService.getQuiz(quizId);
 
-        QuizValidator.assertCanUpdateBeforeStart(quiz.getStartTime(), Instant.now(),MIN_BUFFER_SECONDS_FOR_UPDATE);
-
         if(!quiz.getCreatorUserId().equals(userId)) {
             throw new UnauthorizedActionException("User with id "+userId +"is not authorized to update the quiz");
         }
+
+        //checking the quiz start time is good to add new questions
+        QuizValidator.assertCanUpdateBeforeStart(quiz.getStartTime(), Instant.now(),MIN_BUFFER_SECONDS_FOR_UPDATE);
 
         //Mapping to get a list of Quest ions
         List<Question> questionToSave=questionMapper.toQuestionList(questions);
@@ -91,9 +100,20 @@ public class QuestionService {
         List<Question> savedQuestions=questionRepo.saveAll(questionToSave);
 
         //saving the number of questions
+        int numberOfSavedQuestions=savedQuestions.size();
         int numOfQuestions=questionRepo.countByQuizId(quizId);
         quiz.setQuestionCount(numOfQuestions);
         quizRepo.save(quiz);
+
+        //saving the default position of questions while adding
+        int tempPos=(numOfQuestions-numberOfSavedQuestions)+1;
+        List<QuizQuestionSequence> quizQuestionSequenceList = new ArrayList<>();
+
+        for(Question question:savedQuestions) {
+            quizQuestionSequenceList.add(new QuizQuestionSequence(question.getQuestionId(),quizId,"A",tempPos));
+            tempPos++;
+        }
+        quizQuestionSequenceRepo.saveAll(quizQuestionSequenceList);
 
         log.info("Questions added to quiz :{}",quiz.getQuizId());
 

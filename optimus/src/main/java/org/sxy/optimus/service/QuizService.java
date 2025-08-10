@@ -1,5 +1,6 @@
 package org.sxy.optimus.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,13 +10,17 @@ import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.question.QuestionDTO;
+import org.sxy.optimus.dto.question.QuestionPositionDTO;
 import org.sxy.optimus.dto.quiz.*;
 import org.sxy.optimus.exception.*;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
+import org.sxy.optimus.mapper.QuizQuestionSequenceMapper;
 import org.sxy.optimus.module.Quiz;
+import org.sxy.optimus.module.QuizQuestionSequence;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
 import org.sxy.optimus.repo.QuestionRepo;
+import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
 import org.sxy.optimus.utility.PageRequestHelper;
@@ -25,7 +30,9 @@ import org.sxy.optimus.validation.ValidationResult;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -40,7 +47,15 @@ public class QuizService {
     @Autowired
     private QuestionRepo questionRepo;
 
+    @Autowired
+    private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
+
+    @Autowired
+    private ValidationService validationService;
+
     private final QuizMapper quizMapper;
+
+    private final QuizQuestionSequenceMapper questionSequenceMapper;
 
     private static final int MIN_BUFFER_SECONDS = 300;
 
@@ -51,8 +66,9 @@ public class QuizService {
 
     private final QuestionMapper questionMapper;
 
-    public QuizService(QuizMapper quizMapper, QuestionMapper questionMapper) {
+    public QuizService(QuizMapper quizMapper, QuizQuestionSequenceMapper quizQuestionMapper, QuestionMapper questionMapper) {
         this.quizMapper = quizMapper;
+        this.questionSequenceMapper = quizQuestionMapper;
         this.questionMapper = questionMapper;
     }
 
@@ -182,6 +198,44 @@ public class QuizService {
         log.info("Successfully updated start time for quizId={} to startTime={}", quizID, startTime);
 
         return quizMapper.toQuizStartTimeResDTO(savedQuiz);
+    }
+
+    //This method is to update the sequence of questions in given quiz
+    @Transactional
+    public  QuizQuestionSequenceDTO updateQuizQuestionSequence(UUID userID, UUID quizID, QuizQuestionSequenceDTO reqDTO){
+        quizQuestionSequenceRepo.deferConstraints();//*
+        if(!quizRepo.existsByQuizIdAndCreatorUserId(quizID,userID)){
+            throw new UnauthorizedActionException("User with id "+userID +"is not authorized to make updates for quiz: "+quizID);
+        }
+
+        List<UUID> questionIds = questionRepo.findQuestionIdsByQuizId(quizID);
+
+        //validating the QuizQuestionSequenceDTO given to update the sequence of the questions
+        List<ValidationResult> errors = validationService.validateQuizQuestionSequenceDTO(reqDTO,questionIds);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("Validation failed", errors);
+        }
+
+        //Map to find out position with question id
+        Map<String, Integer> questionPositionMap = reqDTO.getQuestionsPositions()
+                .stream()
+                .collect(Collectors.toMap(QuestionPositionDTO::getQuestionId, QuestionPositionDTO::getPosition));
+
+        //updating the sequence and saving
+        List<QuizQuestionSequence> existingQuestionSequence=quizQuestionSequenceRepo.findByQuizId(quizID);
+
+        for (QuizQuestionSequence qs : existingQuestionSequence) {
+            qs.setPosition(questionPositionMap.get(qs.getQuestionId().toString()));
+        }
+
+        List<QuestionPositionDTO> savedRes=quizQuestionSequenceRepo.saveAll(existingQuestionSequence).stream()
+                .map(questionSequenceMapper::toQuestionPositionDTO)
+                .toList();
+        log.info("Successfully updated sequence for {} questions in quiz {}", savedRes.size(), quizID);
+
+        QuizQuestionSequenceDTO response=new QuizQuestionSequenceDTO();
+        response.setQuestionsPositions(savedRes);
+        return response;
     }
 
 }

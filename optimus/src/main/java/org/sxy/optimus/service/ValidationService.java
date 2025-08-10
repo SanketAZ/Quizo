@@ -3,8 +3,10 @@ package org.sxy.optimus.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.option.OptionRequestDTO;
+import org.sxy.optimus.dto.question.QuestionPositionDTO;
 import org.sxy.optimus.dto.question.QuestionRequestDTO;
 import org.sxy.optimus.dto.question.QuestionUpdateReqDTO;
+import org.sxy.optimus.dto.quiz.QuizQuestionSequenceDTO;
 import org.sxy.optimus.mapper.OptionMapper;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
@@ -124,6 +126,49 @@ public class ValidationService {
     private boolean isDuplicateOptions(List<OptionRequestDTO> options){
         Set<OptionRequestDTO> optionsSet= new HashSet<>(options);
         return optionsSet.size() != options.size();
+    }
+
+    public List<ValidationResult> validateQuizQuestionSequenceDTO(QuizQuestionSequenceDTO quizQuestionSequenceDTO,List<UUID> existingQuestionIds){
+        List<ValidationResult> validationResults = new ArrayList<>();
+        List<QuestionPositionDTO> questionsPositions = quizQuestionSequenceDTO.getQuestionsPositions();
+        Set<UUID> ids=new HashSet<>(existingQuestionIds);
+        Set<UUID> checkedQuestionIds=new HashSet<>();
+        Set<Integer> checkedPositions=new HashSet<>();
+
+        int numberOfQuizQuestions=existingQuestionIds.size();
+
+        if(questionsPositions.size()!=numberOfQuizQuestions){
+            List<ValidationError> validationError=List.of(new ValidationError("questionsPositions", "number of questions must be equal to number of quiz questions"));
+            return List.of(new ValidationResult(0,validationError));
+        }
+
+        int index=0;
+        for(QuestionPositionDTO questionPositionDTO : questionsPositions){
+            List<ValidationError> validationError=new ArrayList<>();
+            if(!ids.contains(UUID.fromString(questionPositionDTO.getQuestionId()))){
+                validationError.add(new ValidationError("questionId","This question does not exist in quiz"));
+            }
+            if(checkedQuestionIds.contains(UUID.fromString(questionPositionDTO.getQuestionId()))){
+                validationError.add(new ValidationError("questionId","This question is added more than once"));
+            }
+
+
+            if(!(questionPositionDTO.getPosition()>0 && questionPositionDTO.getPosition()<=numberOfQuizQuestions)){
+                validationError.add(new ValidationError("position","This question position is out of bound"));
+            }else{
+                if(checkedPositions.contains(questionPositionDTO.getPosition())){
+                    validationError.add(new ValidationError("position","This question position is added more than once"));
+                }
+                checkedPositions.add(questionPositionDTO.getPosition());
+            }
+            checkedQuestionIds.add(UUID.fromString(questionPositionDTO.getQuestionId()));
+            index++;
+            if(!validationError.isEmpty()){
+                validationResults.add(new ValidationResult(index,validationError));
+            }
+        }
+
+        return validationResults;
     }
 
 }
