@@ -49,7 +49,6 @@ public class QuestionService {
     @Autowired
     private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
 
-
     @Autowired
     private ValidationService validationService;
 
@@ -110,7 +109,13 @@ public class QuestionService {
         List<QuizQuestionSequence> quizQuestionSequenceList = new ArrayList<>();
 
         for(Question question:savedQuestions) {
-            quizQuestionSequenceList.add(new QuizQuestionSequence(question.getQuestionId(),quizId,"A",tempPos));
+            QuizQuestionSequence questionSequence=QuizQuestionSequence.builder()
+                    .question(question)
+                    .quiz(quiz)
+                    .position(tempPos)
+                    .sequenceLabel("A")
+                    .build();
+            quizQuestionSequenceList.add(questionSequence);
             tempPos++;
         }
         quizQuestionSequenceRepo.saveAll(quizQuestionSequenceList);

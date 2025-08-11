@@ -70,6 +70,7 @@
             <version>1.5.5.Final</version>
             <scope>provided</scope>
         </dependency>
+
         <!--open api-->
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -80,6 +81,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>annotationProcessor</scope>
         </dependency>
     </dependencies>
 

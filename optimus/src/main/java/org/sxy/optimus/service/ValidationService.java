@@ -171,4 +171,22 @@ public class ValidationService {
         return validationResults;
     }
 
+    public List<ValidationResult> validateQuestionIdsToDelete(List<UUID> questionIdsReq,List<UUID> existingQuestionIds){
+        List<ValidationResult> validationResults = new ArrayList<>();
+        Set<UUID> ids=new HashSet<>(existingQuestionIds);
+
+       int index=0;
+       for(UUID questionId : questionIdsReq){
+           List<ValidationError> validationError=new ArrayList<>();
+           if(!ids.contains(questionId)){
+               validationError.add(new ValidationError("questionId","This question does not exist in quiz"));
+           }
+           if(!validationError.isEmpty()){
+               validationResults.add(new ValidationResult(index,validationError));
+           }
+           index++;
+       }
+       return validationResults;
+    }
+
 }

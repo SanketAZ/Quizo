@@ -1,7 +1,12 @@
 package org.sxy.optimus.module;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 
@@ -16,17 +21,14 @@ import java.util.UUID;
                 @UniqueConstraint(name = "uq_question", columnNames = {"quiz_id", "question_id", "sequence_label"})
         }
  )
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class QuizQuestionSequence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
-    @Column(name = "quiz_Id", nullable = false)
-    private UUID quizId;
-
-    @Column(name = "question_Id", nullable = false)
-    private UUID questionId;
 
     @Column(name = "sequence_label", nullable = false)
     private String sequenceLabel;
@@ -42,23 +44,17 @@ public class QuizQuestionSequence {
     @Column(name = "updated_at",updatable = false,nullable = false)
     private Instant updatedAt;
 
-    public QuizQuestionSequence() {
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_Id",nullable = false)
+    private Quiz quiz;
 
-    public QuizQuestionSequence(UUID id, UUID quizId, UUID questionId, String sequenceLabel, Integer position) {
-        this.id = id;
-        this.quizId = quizId;
-        this.questionId = questionId;
-        this.sequenceLabel = sequenceLabel;
-        this.position = position;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "questionId",nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Question question;
 
-    public QuizQuestionSequence(UUID questionId, UUID quizId, String sequenceLabel, Integer position) {
-        this.questionId = questionId;
-        this.quizId = quizId;
-        this.sequenceLabel = sequenceLabel;
-        this.position = position;
-    }
+    @Column(name = "questionId", insertable = false, updatable = false)
+    private UUID questionId;
 
     public UUID getId() {
         return id;
@@ -66,22 +62,6 @@ public class QuizQuestionSequence {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public UUID getQuizId() {
-        return quizId;
-    }
-
-    public void setQuizId(UUID quizId) {
-        this.quizId = quizId;
-    }
-
-    public UUID getQuestionId() {
-        return questionId;
-    }
-
-    public void setQuestionId(UUID questionId) {
-        this.questionId = questionId;
     }
 
     public String getSequenceLabel() {
@@ -98,5 +78,33 @@ public class QuizQuestionSequence {
 
     public void setPosition(Integer position) {
         this.position = position;
+    }
+
+    public Question getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(Question question) {
+        this.question = question;
+    }
+
+    public Quiz getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(Quiz quiz) {
+        this.quiz = quiz;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public UUID getQuestionId() {
+        return questionId;
     }
 }

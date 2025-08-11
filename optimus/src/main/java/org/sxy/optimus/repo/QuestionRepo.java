@@ -3,6 +3,7 @@ package org.sxy.optimus.repo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.sxy.optimus.module.Question;
@@ -27,4 +28,12 @@ public interface QuestionRepo extends JpaRepository<Question, UUID> {
     //All questions id for give quiz
     @Query("SELECT q.questionId FROM Question q WHERE q.quiz.quizId=:quizId")
     List<UUID> findQuestionIdsByQuizId(@Param("quizId")UUID quizId);
+
+    //Delete the given questions for quiz
+    @Modifying
+    @Query("DELETE FROM Question q WHERE q.questionId IN :ids AND q.quiz.quizId= :quizId")
+    void deleteByIdsAndQuizId(@Param("ids") List<UUID> ids,@Param("quizId") UUID quizId);
+
+    @Query("SELECT q.questionId FROM Question q WHERE q.quiz.quizId=:quizId")
+    List<UUID> findQuestionIdsForQuiz(@Param("quizId") UUID quizId);
 }

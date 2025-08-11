@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.question.QuestionDTO;
+import org.sxy.optimus.dto.question.QuestionDeleteReqDTO;
+import org.sxy.optimus.dto.question.QuestionDeleteResDTO;
 import org.sxy.optimus.dto.quiz.*;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuizService;
@@ -82,6 +84,17 @@ public class QuizController {
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
         UUID quizID = UUID.fromString(quizId);
         QuizQuestionSequenceDTO response = quizService.updateQuizQuestionSequence(userId,quizID,reqDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
+
+    @DeleteMapping("/{quizId}/question")
+    public ResponseEntity<QuestionDeleteResDTO> deleteQuestionsFromQuiz(@PathVariable("quizId") String quizId,@RequestBody @Valid QuestionDeleteReqDTO reqDTO) {
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        UUID quizID = UUID.fromString(quizId);
+
+        QuestionDeleteResDTO response = quizService.deleteQuestions(userId,quizID,reqDTO);
         return ResponseEntity
                 .ok()
                 .body(response);
