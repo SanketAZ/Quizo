@@ -72,4 +72,21 @@ public class RedisConfig {
         return template;
     }
 
+    @Bean
+    @Qualifier("String-String")
+    public RedisTemplate<String, String> redisTemplateForString(RedisConnectionFactory factory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        // Key and Hash key as String
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        // Value and Hash value as String
+        template.setValueSerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new StringRedisSerializer());
+
+        return template;
+    }
+
 }

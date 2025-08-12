@@ -5,14 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.question.QuestionCacheDTO;
+import org.sxy.optimus.dto.question.QuestionPositionDTO;
 import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
+import org.sxy.optimus.module.QuizQuestionSequence;
 import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.redis.RedisCacheQuizRepository;
+import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomQuizRepo;
 
@@ -35,6 +38,11 @@ public class QuizCacheLoaderService {
     @Autowired
     private RoomQuizRepo roomQuizRepo;
 
+    @Autowired
+    private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
+
+    private final String defaultSequenceName = "A";
+
     private final QuestionMapper questionMapper;
 
     private final QuizMapper quizMapper;
@@ -55,7 +63,7 @@ public class QuizCacheLoaderService {
             throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
         }
 
-        if ( cacheQuizRepository.isQuizPreloaded(quizId) ) {
+        if ( cacheQuizRepository.isQuizPreloaded(quizId,roomId,defaultSequenceName) ) {
             return;
         }
 
@@ -70,6 +78,9 @@ public class QuizCacheLoaderService {
                 .stream()
                 .map(questionMapper::toQuestionCacheDTO).toList();
 
+        //Fetching quiz question sequence for quiz
+        List<QuestionPositionDTO>questionPositions=quizQuestionSequenceRepo.findAllQuestionPositionsByQuiz(quizId);
+
         long ttlForQuiz = getTTLForQuiz(quiz.getStartTime(),quiz.getDurationSec(),300);
 
         if(ttlForQuiz<0){
@@ -82,6 +93,9 @@ public class QuizCacheLoaderService {
 
             //Uploading the questions of quiz to redis
             cacheQuizRepository.uploadQuizQuestions(questionsToCache,quizId,roomId,ttlForQuiz);
+
+            //uploading the question sequence to redis
+            cacheQuizRepository.uploadQuizQuestionSequence(questionPositions,defaultSequenceName,quizId,roomId,ttlForQuiz);
         }catch (Exception e){
             log.error("Exception occurred while uploading the quiz to redis {}",e.getMessage());
         }

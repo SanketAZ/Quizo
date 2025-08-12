@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public class QuestionPositionDTO {
     @NotEmpty
     private String questionId;
@@ -17,6 +19,10 @@ public class QuestionPositionDTO {
 
     public QuestionPositionDTO(String questionId, Integer position) {
         this.questionId = questionId;
+        this.position = position;
+    }
+    public QuestionPositionDTO(UUID questionId, Integer position) {
+        this.questionId = questionId.toString();
         this.position = position;
     }
 

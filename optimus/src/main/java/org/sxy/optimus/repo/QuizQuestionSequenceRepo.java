@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.sxy.optimus.dto.question.QuestionPositionDTO;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.QuizQuestionSequence;
 
@@ -22,6 +23,15 @@ public interface QuizQuestionSequenceRepo extends JpaRepository<QuizQuestionSequ
     void deferConstraints();
 
     List<QuizQuestionSequence> findAllByQuizOrderByPositionAsc(Quiz quiz);
+
+
+    @Query("""
+            SELECT DISTINCT new org.sxy.optimus.dto.question.QuestionPositionDTO(qs.question.questionId,qs.position) 
+            FROM QuizQuestionSequence qs 
+            WHERE qs.quiz.quizId=:quizId 
+            ORDER BY qs.position ASC
+                        """)
+    List<QuestionPositionDTO> findAllQuestionPositionsByQuiz(UUID quizId);
 
 
 }

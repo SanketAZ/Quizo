@@ -10,8 +10,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 import org.sxy.optimus.dto.question.QuestionCacheDTO;
+import org.sxy.optimus.dto.question.QuestionPositionDTO;
 import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
-
+import org.sxy.optimus.utility.redis.RedisKeys;
 
 
 import java.time.Duration;
@@ -30,23 +31,26 @@ public class RedisCacheQuizRepository {
 
     private final RedisTemplate<String, QuestionCacheDTO> redisTemplate;
     private final RedisTemplate<String, QuizDetailCacheDTO> redisTemplateQuizDetail;
+    private final RedisTemplate<String, String> redisTemplateString;
 
 
-    public RedisCacheQuizRepository(@Qualifier("String-QuestionCacheDTO") RedisTemplate<String, QuestionCacheDTO> redisTemplate, @Qualifier("String-QuizDetailCacheDTO")RedisTemplate<String, QuizDetailCacheDTO> redisDetailTemplate) {
+    public RedisCacheQuizRepository(@Qualifier("String-QuestionCacheDTO") RedisTemplate<String, QuestionCacheDTO> redisTemplate, @Qualifier("String-QuizDetailCacheDTO")RedisTemplate<String, QuizDetailCacheDTO> redisDetailTemplate, @Qualifier("String-String")RedisTemplate<String, String> redisTemplateString) {
         this.redisTemplate = redisTemplate;
         this.redisTemplateQuizDetail = redisDetailTemplate;
+        this.redisTemplateString = redisTemplateString;
     }
 
-    public boolean isQuizPreloaded(UUID quizId) {
-        String key1=formKey(List.of("quiz", quizId.toString(), "detail"));
-        String Key2=formKey(List.of("quiz",quizId.toString(),"questions"));
+    public boolean isQuizPreloaded(UUID quizId,UUID roomId,String sequenceLabel) {
+        String key1= RedisKeys.buildQuizDetailKey(quizId.toString(),roomId.toString());
+        String Key2= RedisKeys.buildQuizQuestionsKey(quizId.toString(),roomId.toString());
+        String Key3= RedisKeys.buildQuizSequenceKey(quizId.toString(),roomId.toString(),sequenceLabel);;
 
-        return redisTemplateQuizDetail.hasKey(key1) && redisTemplate.hasKey(Key2);
+        return redisTemplateQuizDetail.hasKey(key1) && redisTemplate.hasKey(Key2) && redisTemplate.hasKey(Key3);
     }
 
     //This method is to upload the quiz detail to redis
     public void uploadQuizDetails(@NotNull QuizDetailCacheDTO quizDetailCacheDTO,@Min(1) Long ttlInSeconds)  throws Exception{
-        String key=formKey(List.of("quiz","roomId",quizDetailCacheDTO.getRoomId(), "quizId",quizDetailCacheDTO.getQuizId(), "detail"));
+        String key= RedisKeys.buildQuizDetailKey(quizDetailCacheDTO.getQuizId(),quizDetailCacheDTO.getRoomId());
         long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         try {
@@ -64,7 +68,7 @@ public class RedisCacheQuizRepository {
     //This method is used to upload the quiz question to redis using hash
     public void uploadQuizQuestions(@NotEmpty List<QuestionCacheDTO>questions, @NotNull UUID quizID,@NotNull UUID roomId,@Min(1) Long ttlInSeconds) throws Exception{
 
-        String Key=formKey(List.of("quiz","roomId",roomId.toString(),"quizId",quizID.toString(),"questions"));
+        String Key= RedisKeys.buildQuizQuestionsKey(quizID.toString(),roomId.toString());
         long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         Map<String, QuestionCacheDTO> mapOfQuestionsQuestions = mapQuestionsById(questions);
@@ -79,6 +83,26 @@ public class RedisCacheQuizRepository {
 
         logger.info("Uploaded {} questions to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
                 questions.size(), quizID, ttlInSeconds, Key);
+    }
+
+    public void uploadQuizQuestionSequence(@NotEmpty List<QuestionPositionDTO>questionPositionList,String sequenceLabel,UUID quizID, UUID roomID, @Min(1) Long ttlInSeconds) throws Exception{
+        String Key= RedisKeys.buildQuizSequenceKey(quizID.toString(),roomID.toString(),sequenceLabel);
+        long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
+
+        Map<String,String> questionPositionMap=questionPositionList.stream()
+                .collect(Collectors.toMap(QuestionPositionDTO::getQuestionId,questionPositionDTO -> questionPositionDTO.getPosition().toString()));
+
+        try{
+            redisTemplateString.opsForHash().putAll(Key,questionPositionMap);
+            redisTemplateString.expire(Key, Duration.ofSeconds(ttl));
+        }catch (Exception e){
+            logger.error("Failed to upload quiz question sequence to Redis for quizID: {}", quizID, e);
+            throw e;
+        }
+
+        logger.info("Uploaded {} question sequence to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
+                questionPositionList.size(), quizID, ttlInSeconds, Key);
+
     }
 
     private Map<String,QuestionCacheDTO> mapQuestionsById(@NotEmpty List<QuestionCacheDTO>questions) {
