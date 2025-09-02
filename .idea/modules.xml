@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Quizo.iml" filepath="$PROJECT_DIR$/Quizo.iml" />
-      <module fileurl="file://$PROJECT_DIR$/optimus/optimus.iml" filepath="$PROJECT_DIR$/optimus/optimus.iml" />
     </modules>
   </component>
 </project>

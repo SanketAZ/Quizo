@@ -1,13 +1,13 @@
-package org.sxy.optimus;
+package org.sxy.frontier;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class OptimusApplication {
+public class FrontierApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(OptimusApplication.class, args);
+        SpringApplication.run(FrontierApplication.class, args);
     }
 
 }
