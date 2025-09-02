@@ -1,38 +1,41 @@
 package org.sxy.optimus.service;
 
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
-import org.sxy.optimus.dto.question.QuestionDTO;
-import org.sxy.optimus.dto.question.QuestionDeleteReqDTO;
-import org.sxy.optimus.dto.question.QuestionDeleteResDTO;
-import org.sxy.optimus.dto.question.QuestionPositionDTO;
+import org.sxy.optimus.dto.question.*;
 import org.sxy.optimus.dto.quiz.*;
+import org.sxy.optimus.event.QuestionCachedEvent;
+import org.sxy.optimus.event.QuizDetailCachedEvent;
+import org.sxy.optimus.event.QuizQuestionSequenceCachedEvent;
 import org.sxy.optimus.exception.*;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.mapper.QuizQuestionSequenceMapper;
+import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.QuizQuestionSequence;
+import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
-import org.sxy.optimus.repo.QuestionRepo;
-import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
-import org.sxy.optimus.repo.QuizRepo;
-import org.sxy.optimus.repo.RoomRepo;
+import org.sxy.optimus.redis.RedisCacheQuizRepository;
+import org.sxy.optimus.repo.*;
 import org.sxy.optimus.utility.PageRequestHelper;
 import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.utility.QuizValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -54,6 +57,15 @@ public class QuizService {
 
     @Autowired
     private ValidationService validationService;
+
+    @Autowired
+    private RoomQuizRepo roomQuizRepo;
+
+    @Autowired
+    private RedisCacheQuizRepository redisCacheQuizRepository;
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
 
     private final QuizMapper quizMapper;
 
@@ -294,6 +306,94 @@ public class QuizService {
                 .questionIds(questionDeleteReqDTO.getQuestionIds())
                 .deletedCount(deletedCount)
                 .build();
+    }
+
+    //Get QuizDetailsCacheDetails
+    @Transactional(readOnly = true)
+    public QuizDetailCacheDTO getOrLoadQuizDetailCache(UUID roomId, UUID quizId){
+        //first check in redis
+        var cachedOpt = redisCacheQuizRepository.getQuizDetails(roomId, quizId);
+        if (cachedOpt.isPresent())
+            return cachedOpt.get();
+
+        if (!quizRepo.existsById(quizId)) {
+            throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
+        }
+
+        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+            throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
+        }
+
+        //Fetching quiz from the database
+        Quiz quiz= quizRepo.getQuizWithAllQuestions(quizId);
+        QuizDetailCacheDTO quizDetailCacheDTO = quizMapper.toQuizDetailCacheDTO(quiz);
+        quizDetailCacheDTO.setRoomId(roomId.toString());
+
+        long ttlForQuiz = getTTLForQuiz(quiz.getStartTime(),quiz.getDurationSec(),300);
+
+        //upload the result to redis
+        publisher.publishEvent(new QuizDetailCachedEvent(quizDetailCacheDTO,ttlForQuiz));
+        return quizDetailCacheDTO;
+    }
+
+    //Get QuizQuestionsSequenceCache
+    @Transactional(readOnly = true)
+    public List<QuestionPositionDTO> getOrLoadQuestionPositionCache(String label,UUID roomId, UUID quizId){
+        //first check in redis
+        List<QuestionPositionDTO> cachedData = redisCacheQuizRepository.getQuizQuestionSequence(label,quizId,roomId);
+        if (!cachedData.isEmpty())
+            return cachedData;
+
+        if (!quizRepo.existsById(quizId)) {
+            throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
+        }
+        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+            throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
+        }
+        //Fetching quiz question sequence for quiz
+        List<QuestionPositionDTO>questionPositions=quizQuestionSequenceRepo.findAllQuestionPositionsByQuiz(quizId);
+
+        //upload to the redis
+        publisher.publishEvent(new QuizQuestionSequenceCachedEvent(questionPositions,"A",quizId,roomId,Duration.ofSeconds(900)));
+        return questionPositions;
+    }
+
+    public QuestionCacheDTO getOrLoadQuestionCacheDTO(UUID roomId, UUID quizId,UUID questionId){
+        Optional<QuestionCacheDTO>questionCacheOp=redisCacheQuizRepository.getQuestion(roomId,quizId,questionId);
+        if(questionCacheOp.isPresent()){
+            return questionCacheOp.get();
+        }
+        Optional<Question> questionOp=questionRepo.findQuestionByQuestionIdWithQuiz(questionId);
+        if(questionOp.isEmpty()){
+            throw new ResourceDoesNotExitsException("Question","QuestionId",questionId.toString());
+        }
+        Question question=questionOp.get();
+        if(!question.getQuiz().getQuizId().equals(quizId)){
+            String msg=String.format("Question with id %s is not in Quiz %s", questionId.toString(),quizId.toString());
+            throw new UnauthorizedActionException(msg);
+        }
+        QuestionCacheDTO res=questionMapper.toQuestionCacheDTO(question);
+        publisher.publishEvent(new QuestionCachedEvent(roomId,quizId,res,Duration.ofSeconds(900)));
+        return res;
+    }
+
+
+    private long getTTLForQuiz(Instant quizStartTime,int quizDurationSec,int bufferDurationSec) {
+        if(quizStartTime==null){
+            throw new IllegalArgumentException("Quiz Start time must not be null");
+        }
+        if(quizDurationSec<=0){
+            throw new IllegalArgumentException("Quiz Duration must be greater than 0. Found: "+quizDurationSec);
+        }
+        if(bufferDurationSec<0){
+            throw new IllegalArgumentException("Buffer duration cannot be negative. Found: "+bufferDurationSec);
+        }
+        Instant currentTime = Instant.now();
+        Instant quizEndTime = quizStartTime.plus(Duration.ofSeconds(quizDurationSec));
+        long totalDiff=Duration.between(currentTime, quizEndTime).toSeconds();
+        totalDiff+=bufferDurationSec;
+
+        return totalDiff;
     }
 
 }

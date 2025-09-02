@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,7 @@ import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.pojo.RoomUserDetails;
 import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.room.*;
+import org.sxy.optimus.event.RoomUserDetailsCachedEvent;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
@@ -60,6 +62,9 @@ public class RoomService {
 
     @Autowired
     private ValidationService validationService;
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
 
     private final RoomMapper roomMapper;
 
@@ -271,6 +276,29 @@ public class RoomService {
         }
 
         log.info("Cached {} users for room {} in Redis", userDetailsToUpload.size(), roomId);
+    }
+
+    public RoomUserDetails getRoomUsersDetailCache(UUID roomId, UUID userId){
+        Optional<RoomUserDetails> ops=redisRoomRepository.getRoomUserDetailsCache(roomId,userId);
+        if(ops.isPresent()){
+            return ops.get();
+        }
+        //check room exists or not
+        if(!roomRepo.existsById(roomId)) {
+            throw new ResourceDoesNotExitsException("Room","roomId",roomId.toString());
+        }
+        if(!roomUserRepo.existsById(new RoomUserId(roomId,userId))) {
+            log.warn("User {} is not present in room {}", userId, roomId);
+            String msg=String.format("User with id: %s does not present in Room with id: %s",userId,roomId);
+            throw new UnauthorizedActionException(msg);
+        }
+
+        //Here we will call the user service to get more info about the user
+        //for now creating the fake object
+        RoomUserDetails roomUserDetails=new RoomUserDetails(userId.toString(),"username1");
+
+        publisher.publishEvent(new RoomUserDetailsCachedEvent(roomId,roomUserDetails,Duration.ofSeconds(900)));
+        return roomUserDetails;
     }
 
 }

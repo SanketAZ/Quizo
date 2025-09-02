@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -90,7 +91,7 @@ public class RedisCacheQuizRepository {
         long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         Map<String,String> questionPositionMap=questionPositionList.stream()
-                .collect(Collectors.toMap(QuestionPositionDTO::getQuestionId,questionPositionDTO -> questionPositionDTO.getPosition().toString()));
+                .collect(Collectors.toMap(questionPositionDTO -> questionPositionDTO.getPosition().toString(),QuestionPositionDTO::getQuestionId));
 
         try{
             redisTemplateString.opsForHash().putAll(Key,questionPositionMap);
@@ -103,6 +104,34 @@ public class RedisCacheQuizRepository {
         logger.info("Uploaded {} question sequence to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
                 questionPositionList.size(), quizID, ttlInSeconds, Key);
 
+    }
+
+    public List<QuestionPositionDTO> getQuizQuestionSequence(String sequenceLabel,UUID quizID, UUID roomID){
+        String Key= RedisKeys.buildQuizSequenceKey(quizID.toString(),roomID.toString(),sequenceLabel);
+        HashOperations<String, String, String> hashOp=redisTemplateString.opsForHash();
+        Map<String, String> questionPositionMap;
+        try {
+            questionPositionMap = hashOp.entries(Key);
+        } catch (Exception e){
+            logger.error("Failed to get quiz question sequence to Redis for quizID: {}", quizID, e);
+            throw e;
+        }
+
+        return questionPositionMap.entrySet()
+                .stream()
+                .map(entry ->new QuestionPositionDTO(entry.getValue(), Integer.valueOf(entry.getKey())))
+                .toList();
+    }
+    public Optional<QuizDetailCacheDTO> getQuizDetails(UUID roomId, UUID quizId) {
+        String key= RedisKeys.buildQuizDetailKey(quizId.toString(),roomId.toString());
+        QuizDetailCacheDTO quizDetailCacheDTO = redisTemplateQuizDetail.opsForValue().get(key);
+        return Optional.ofNullable(quizDetailCacheDTO);
+    }
+
+    public Optional<QuestionCacheDTO> getQuestion(UUID roomId, UUID quizId, UUID questionId) {
+        String key= RedisKeys.buildQuizQuestionsKey(quizId.toString(),roomId.toString());
+        QuestionCacheDTO questionCacheDTO= (QuestionCacheDTO) redisTemplate.opsForHash().get(key,questionId.toString());
+        return Optional.ofNullable(questionCacheDTO);
     }
 
     private Map<String,QuestionCacheDTO> mapQuestionsById(@NotEmpty List<QuestionCacheDTO>questions) {

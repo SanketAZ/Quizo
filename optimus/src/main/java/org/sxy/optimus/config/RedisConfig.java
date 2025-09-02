@@ -2,6 +2,7 @@ package org.sxy.optimus.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,7 +13,7 @@ import org.sxy.optimus.dto.pojo.RoomUserDetails;
 import org.sxy.optimus.dto.question.QuestionCacheDTO;
 import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
 
-@ControllerAdvice
+@Configuration
 public class RedisConfig {
 
     @Bean
