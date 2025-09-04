@@ -48,6 +48,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(InvalidSubmissionException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidSubmissionException(InvalidSubmissionException ex,HttpServletRequest req){
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ProblemDetail body = pd(status, "Invalid submission", ex.getMessage(), req, "invalid-submission");
+        log.error(ex.getMessage());
+
+        return ResponseEntity.status(status).body(body);
+    }
+
     @ExceptionHandler(UpstreamProblemException.class)
     public ResponseEntity<ProblemDetail> UpstreamProblemException(UpstreamProblemException ex){
 
