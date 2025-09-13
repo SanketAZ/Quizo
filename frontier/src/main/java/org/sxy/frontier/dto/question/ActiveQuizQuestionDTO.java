@@ -1,11 +1,17 @@
 package org.sxy.frontier.dto.question;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.sxy.frontier.dto.option.ActiveQuizOptionDTO;
 import org.sxy.frontier.redis.dto.OptionCacheDTO;
 
 import java.util.List;
 
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ActiveQuizQuestionDTO {
     @NotEmpty
     private String questionId;

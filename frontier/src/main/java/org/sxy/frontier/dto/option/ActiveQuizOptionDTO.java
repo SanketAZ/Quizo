@@ -1,7 +1,9 @@
 package org.sxy.frontier.dto.option;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder;
 
+@Builder
 public class ActiveQuizOptionDTO {
     @NotEmpty
     private String optionId;

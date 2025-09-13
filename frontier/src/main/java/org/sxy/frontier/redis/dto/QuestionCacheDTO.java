@@ -1,10 +1,12 @@
 package org.sxy.frontier.redis.dto;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder;
 import org.sxy.frontier.redis.dto.OptionCacheDTO;
 
 import java.util.List;
 
+@Builder
 public class QuestionCacheDTO {
     @NotEmpty
     private String questionId;

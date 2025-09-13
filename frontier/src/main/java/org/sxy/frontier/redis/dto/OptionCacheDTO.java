@@ -1,7 +1,9 @@
 package org.sxy.frontier.redis.dto;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder;
 
+@Builder
 public class OptionCacheDTO {
     @NotEmpty
     private String optionId;
