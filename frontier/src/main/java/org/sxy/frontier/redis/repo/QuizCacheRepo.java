@@ -1,4 +1,4 @@
-package org.sxy.frontier.redis;
+package org.sxy.frontier.redis.repo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class QuizCacheRepo {
+public class    QuizCacheRepo {
     private final RedisTemplate<String, QuestionCacheDTO> rtQuestionCacheDTO;
     private final HashOperations<String, String,QuestionCacheDTO> hashOpsQuestionCacheDTO;
     private final RedisTemplate<String, QuizDetailCacheDTO> rtQuizDetailCacheDTO;

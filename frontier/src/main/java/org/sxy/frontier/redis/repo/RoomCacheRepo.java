@@ -1,16 +1,13 @@
-package org.sxy.frontier.redis;
+package org.sxy.frontier.redis.repo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
-import org.sxy.frontier.redis.dto.QuestionCacheDTO;
-import org.sxy.frontier.redis.dto.QuizDetailCacheDTO;
 import org.sxy.frontier.redis.dto.RoomUserDetailsCache;
 import org.sxy.frontier.utility.RedisKeys;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository

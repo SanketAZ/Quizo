@@ -8,6 +8,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.sxy.frontier.redis.dto.ParticipantQuizSessionCacheDTO;
 import org.sxy.frontier.redis.dto.QuestionCacheDTO;
 import org.sxy.frontier.redis.dto.QuizDetailCacheDTO;
 import org.sxy.frontier.redis.dto.RoomUserDetailsCache;
@@ -66,6 +67,24 @@ public class RedisConfig {
 
         //for value
         Jackson2JsonRedisSerializer<RoomUserDetailsCache> serializer = new Jackson2JsonRedisSerializer<>(RoomUserDetailsCache.class);
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
+
+        return template;
+    }
+
+    @Bean
+    @Qualifier("String-ParticipantQuizSessionCache")
+    public RedisTemplate<String, ParticipantQuizSessionCacheDTO> redisTemplateForParticipantQuizSession(RedisConnectionFactory factory){
+        RedisTemplate<String, ParticipantQuizSessionCacheDTO> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        //for key
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        //for value
+        Jackson2JsonRedisSerializer<ParticipantQuizSessionCacheDTO> serializer = new Jackson2JsonRedisSerializer<>(ParticipantQuizSessionCacheDTO.class);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
 

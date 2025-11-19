@@ -7,12 +7,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.sxy.frontier.client.OptimusServiceClient;
 import org.sxy.frontier.dto.option.ActiveQuizOptionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.mapper.QuizMapper;
-import org.sxy.frontier.redis.QuizCacheRepo;
+import org.sxy.frontier.redis.repo.QuizCacheRepo;
 import org.sxy.frontier.redis.dto.OptionCacheDTO;
 import org.sxy.frontier.redis.dto.QuestionCacheDTO;
 

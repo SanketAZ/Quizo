@@ -9,18 +9,14 @@ import org.sxy.frontier.dto.AnswerEvaluation;
 import org.sxy.frontier.dto.option.OptionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
-import org.sxy.frontier.dto.question.AnswerSubmissionResDTO;
 import org.sxy.frontier.dto.question.QuestionDTO;
 import org.sxy.frontier.exception.InvalidSubmissionException;
 import org.sxy.frontier.exception.ResourceDoesNotExitsException;
 import org.sxy.frontier.mapper.QuizMapper;
-import org.sxy.frontier.module.Submission;
-import org.sxy.frontier.redis.QuizCacheRepo;
+import org.sxy.frontier.redis.repo.QuizCacheRepo;
 import org.sxy.frontier.redis.dto.QuestionCacheDTO;
 import org.sxy.frontier.redis.dto.QuizDetailCacheDTO;
-import org.sxy.frontier.repo.SubmissionRepo;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,6 +66,13 @@ public class QuizService {
         }
         QuestionDTO questionDTO=quizMapper.toQuestionDTO(questionCache);
         return checkAnswer(questionDTO,submittedOptionID,roomId,quizId);
+    }
+
+    public QuizDetailCacheDTO getQuizDetail(UUID roomId, UUID quizId){
+        Optional<QuizDetailCacheDTO> quizDetailOpt=quizCacheRepo.getQuizDetails(roomId,quizId);
+        QuizDetailCacheDTO quizDetail = quizDetailOpt.orElseGet(
+                () -> optimusServiceClient.getQuizDetails(roomId, quizId));
+        return quizDetail;
     }
 
     private AnswerEvaluation checkAnswer(QuestionDTO questionDTO,UUID submittedOptionId,UUID roomId,UUID quizId){

@@ -3,6 +3,7 @@ package org.sxy.frontier.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionResDTO;
@@ -35,6 +36,17 @@ public class LiveQuizController {
         UUID roomID=UUID.fromString(roomId);
         UUID quizID=UUID.fromString(quizId);
         AnswerSubmissionResDTO res=participantSessionService.submitQuestion(roomID,quizID,userId,answerSubmissionReqDTO);
+        return ResponseEntity
+                .ok()
+                .body(res);
+    }
+
+    @PostMapping("/{roomId}/{quizId}/start")
+    public ResponseEntity<ParticipantQuizSessionDTO> startQuiz(@PathVariable String roomId, @PathVariable String quizId) {
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        UUID roomID=UUID.fromString(roomId);
+        UUID quizID=UUID.fromString(quizId);
+        ParticipantQuizSessionDTO res=participantSessionService.startQuiz(roomID,quizID,userId);
         return ResponseEntity
                 .ok()
                 .body(res);
