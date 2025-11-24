@@ -24,7 +24,10 @@ import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.QuizQuestionSequence;
 import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
-import org.sxy.optimus.redis.RedisCacheQuizRepository;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
+import org.sxy.optimus.redis.repo.QuizCacheRepository;
+import org.sxy.optimus.redis.service.QuizCacheService;
 import org.sxy.optimus.repo.*;
 import org.sxy.optimus.utility.PageRequestHelper;
 import org.sxy.optimus.utility.PageRequestValidator;
@@ -45,27 +48,16 @@ public class QuizService {
 
     @Autowired
     private QuizRepo quizRepo;
-
     @Autowired
     private RoomRepo roomRepo;
-
     @Autowired
     private QuestionRepo questionRepo;
-
     @Autowired
     private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
-
     @Autowired
     private ValidationService validationService;
-
     @Autowired
-    private RoomQuizRepo roomQuizRepo;
-
-    @Autowired
-    private RedisCacheQuizRepository redisCacheQuizRepository;
-
-    @Autowired
-    private ApplicationEventPublisher publisher;
+    private QuizDataService quizDataService;
 
     private final QuizMapper quizMapper;
 
@@ -252,17 +244,6 @@ public class QuizService {
         return response;
     }
 
-    /**
-     * Deletes one or more questions from the specified quiz and resequences the remaining questions.
-     *
-     * @param userID User requesting deletion; must be the quiz creator.
-     * @param quizID Quiz from which questions will be deleted.
-     * @param questionDeleteReqDTO    Request containing the question IDs to delete.
-     * @return Response with deleted question IDs and remaining count.
-     * @throws ResourceDoesNotExitsException    If the quiz does not exist.
-     * @throws UnauthorizedActionException  If the user is not the quiz creator.
-     * @throws ValidationException  If IDs are invalid or not part of the quiz.
-     */
     @Transactional
     public QuestionDeleteResDTO deleteQuestions(UUID userID, UUID quizID, QuestionDeleteReqDTO questionDeleteReqDTO){
         quizQuestionSequenceRepo.deferConstraints();//*
@@ -308,92 +289,17 @@ public class QuizService {
                 .build();
     }
 
-    //Get QuizDetailsCacheDetails
     @Transactional(readOnly = true)
-    public QuizDetailCacheDTO getOrLoadQuizDetailCache(UUID roomId, UUID quizId){
-        //first check in redis
-        var cachedOpt = redisCacheQuizRepository.getQuizDetails(roomId, quizId);
-        if (cachedOpt.isPresent())
-            return cachedOpt.get();
-
-        if (!quizRepo.existsById(quizId)) {
-            throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
-        }
-
-        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
-            throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
-        }
-
-        //Fetching quiz from the database
-        Quiz quiz= quizRepo.getQuizWithAllQuestions(quizId);
-        QuizDetailCacheDTO quizDetailCacheDTO = quizMapper.toQuizDetailCacheDTO(quiz);
-        quizDetailCacheDTO.setRoomId(roomId.toString());
-
-        long ttlForQuiz = getTTLForQuiz(quiz.getStartTime(),quiz.getDurationSec(),300);
-
-        //upload the result to redis
-        publisher.publishEvent(new QuizDetailCachedEvent(quizDetailCacheDTO,ttlForQuiz));
-        return quizDetailCacheDTO;
+    public QuizDetailDTO getQuizDetail(UUID roomId, UUID quizId){
+        return quizDataService.getQuizDetail(roomId, quizId);
     }
 
-    //Get QuizQuestionsSequenceCache
     @Transactional(readOnly = true)
-    public List<QuestionPositionDTO> getOrLoadQuestionPositionCache(String label,UUID roomId, UUID quizId){
-        //first check in redis
-        List<QuestionPositionDTO> cachedData = redisCacheQuizRepository.getQuizQuestionSequence(label,quizId,roomId);
-        if (!cachedData.isEmpty())
-            return cachedData;
-
-        if (!quizRepo.existsById(quizId)) {
-            throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
-        }
-        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
-            throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
-        }
-        //Fetching quiz question sequence for quiz
-        List<QuestionPositionDTO>questionPositions=quizQuestionSequenceRepo.findAllQuestionPositionsByQuiz(quizId);
-
-        //upload to the redis
-        publisher.publishEvent(new QuizQuestionSequenceCachedEvent(questionPositions,"A",quizId,roomId,Duration.ofSeconds(900)));
-        return questionPositions;
+    public List<QuestionPositionDTO> getQuestionPosition(String label,UUID roomId, UUID quizId){
+       return quizDataService.getQuestionPosition(label,roomId,quizId);
     }
 
-    public QuestionCacheDTO getOrLoadQuestionCacheDTO(UUID roomId, UUID quizId,UUID questionId){
-        Optional<QuestionCacheDTO>questionCacheOp=redisCacheQuizRepository.getQuestion(roomId,quizId,questionId);
-        if(questionCacheOp.isPresent()){
-            return questionCacheOp.get();
-        }
-        Optional<Question> questionOp=questionRepo.findQuestionByQuestionIdWithQuiz(questionId);
-        if(questionOp.isEmpty()){
-            throw new ResourceDoesNotExitsException("Question","QuestionId",questionId.toString());
-        }
-        Question question=questionOp.get();
-        if(!question.getQuiz().getQuizId().equals(quizId)){
-            String msg=String.format("Question with id %s is not in Quiz %s", questionId.toString(),quizId.toString());
-            throw new UnauthorizedActionException(msg);
-        }
-        QuestionCacheDTO res=questionMapper.toQuestionCacheDTO(question);
-        publisher.publishEvent(new QuestionCachedEvent(roomId,quizId,res,Duration.ofSeconds(900)));
-        return res;
+    public QuestionDTO getQuestion(UUID roomId, UUID quizId,UUID questionId){
+        return quizDataService.getQuestion(roomId, quizId, questionId);
     }
-
-
-    private long getTTLForQuiz(Instant quizStartTime,int quizDurationSec,int bufferDurationSec) {
-        if(quizStartTime==null){
-            throw new IllegalArgumentException("Quiz Start time must not be null");
-        }
-        if(quizDurationSec<=0){
-            throw new IllegalArgumentException("Quiz Duration must be greater than 0. Found: "+quizDurationSec);
-        }
-        if(bufferDurationSec<0){
-            throw new IllegalArgumentException("Buffer duration cannot be negative. Found: "+bufferDurationSec);
-        }
-        Instant currentTime = Instant.now();
-        Instant quizEndTime = quizStartTime.plus(Duration.ofSeconds(quizDurationSec));
-        long totalDiff=Duration.between(currentTime, quizEndTime).toSeconds();
-        totalDiff+=bufferDurationSec;
-
-        return totalDiff;
-    }
-
 }

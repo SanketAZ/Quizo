@@ -8,10 +8,9 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.sxy.optimus.dto.pojo.RoomUserDetails;
-import org.sxy.optimus.dto.question.QuestionCacheDTO;
-import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 
 @Configuration
 public class RedisConfig {

@@ -1,6 +1,7 @@
 package org.sxy.optimus.event;
 
-import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
+import org.sxy.optimus.dto.quiz.QuizDetailDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 
-public record QuizDetailCachedEvent(QuizDetailCacheDTO dto, long ttl) {
+public record QuizDetailCachedEvent(QuizDetailDTO dto, long ttl) {
 }

@@ -1,4 +1,4 @@
-package org.sxy.optimus.redis;
+package org.sxy.optimus.redis.repo;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -10,9 +10,9 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
-import org.sxy.optimus.dto.question.QuestionCacheDTO;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
 import org.sxy.optimus.dto.question.QuestionPositionDTO;
-import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 import org.sxy.optimus.utility.redis.RedisKeys;
 
 
@@ -26,16 +26,16 @@ import java.util.stream.Collectors;
 
 @Component
 @Validated
-public class RedisCacheQuizRepository {
+public class QuizCacheRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisCacheQuizRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuizCacheRepository.class);
 
     private final RedisTemplate<String, QuestionCacheDTO> redisTemplate;
     private final RedisTemplate<String, QuizDetailCacheDTO> redisTemplateQuizDetail;
     private final RedisTemplate<String, String> redisTemplateString;
 
 
-    public RedisCacheQuizRepository(@Qualifier("String-QuestionCacheDTO") RedisTemplate<String, QuestionCacheDTO> redisTemplate, @Qualifier("String-QuizDetailCacheDTO")RedisTemplate<String, QuizDetailCacheDTO> redisDetailTemplate, @Qualifier("String-String")RedisTemplate<String, String> redisTemplateString) {
+    public QuizCacheRepository(@Qualifier("String-QuestionCacheDTO") RedisTemplate<String, QuestionCacheDTO> redisTemplate, @Qualifier("String-QuizDetailCacheDTO")RedisTemplate<String, QuizDetailCacheDTO> redisDetailTemplate, @Qualifier("String-String")RedisTemplate<String, String> redisTemplateString) {
         this.redisTemplate = redisTemplate;
         this.redisTemplateQuizDetail = redisDetailTemplate;
         this.redisTemplateString = redisTemplateString;
@@ -50,59 +50,55 @@ public class RedisCacheQuizRepository {
     }
 
     //This method is to upload the quiz detail to redis
-    public void uploadQuizDetails(@NotNull QuizDetailCacheDTO quizDetailCacheDTO,@Min(1) Long ttlInSeconds)  throws Exception{
+    public void uploadQuizDetails(@NotNull QuizDetailCacheDTO quizDetailCacheDTO,Duration ttl)  throws Exception{
         String key= RedisKeys.buildQuizDetailKey(quizDetailCacheDTO.getQuizId(),quizDetailCacheDTO.getRoomId());
-        long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         try {
             redisTemplateQuizDetail.opsForValue().set(key, quizDetailCacheDTO);
-            redisTemplateQuizDetail.expire(key, Duration.ofSeconds(ttl));
+            redisTemplateQuizDetail.expire(key, ttl);
         }catch (Exception e){
             logger.error("Failed to upload quiz details to Redis for quizID: {}", quizDetailCacheDTO.getQuizId(),e);
             throw e;
         }
 
         logger.info("Uploaded quiz details to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
-                quizDetailCacheDTO.getQuizId(), ttlInSeconds, key);
+                quizDetailCacheDTO.getQuizId(), ttl, key);
     }
 
     //This method is used to upload the quiz question to redis using hash
-    public void uploadQuizQuestions(@NotEmpty List<QuestionCacheDTO>questions, @NotNull UUID quizID,@NotNull UUID roomId,@Min(1) Long ttlInSeconds) throws Exception{
+    public void uploadQuizQuestions(@NotEmpty List<QuestionCacheDTO>questions, @NotNull UUID quizID,@NotNull UUID roomId,Duration ttl) throws Exception{
 
         String Key= RedisKeys.buildQuizQuestionsKey(quizID.toString(),roomId.toString());
-        long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
-
         Map<String, QuestionCacheDTO> mapOfQuestionsQuestions = mapQuestionsById(questions);
 
         try{
             redisTemplate.opsForHash().putAll(Key,mapOfQuestionsQuestions);
-            redisTemplate.expire(Key, Duration.ofSeconds(ttl));
+            redisTemplate.expire(Key, ttl);
         }catch (Exception e){
             logger.error("Failed to upload quiz questions to Redis for quizID: {}", quizID, e);
             throw e;
         }
 
         logger.info("Uploaded {} questions to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
-                questions.size(), quizID, ttlInSeconds, Key);
+                questions.size(), quizID, ttl.getSeconds(), Key);
     }
 
-    public void uploadQuizQuestionSequence(@NotEmpty List<QuestionPositionDTO>questionPositionList,String sequenceLabel,UUID quizID, UUID roomID, @Min(1) Long ttlInSeconds) throws Exception{
+    public void uploadQuizQuestionSequence(@NotEmpty List<QuestionPositionDTO>questionPositionList,String sequenceLabel,UUID quizID, UUID roomID,Duration ttl) throws Exception{
         String Key= RedisKeys.buildQuizSequenceKey(quizID.toString(),roomID.toString(),sequenceLabel);
-        long ttl= Optional.ofNullable(ttlInSeconds).orElse(3600L);
 
         Map<String,String> questionPositionMap=questionPositionList.stream()
                 .collect(Collectors.toMap(questionPositionDTO -> questionPositionDTO.getPosition().toString(),QuestionPositionDTO::getQuestionId));
 
         try{
             redisTemplateString.opsForHash().putAll(Key,questionPositionMap);
-            redisTemplateString.expire(Key, Duration.ofSeconds(ttl));
+            redisTemplateString.expire(Key, ttl);
         }catch (Exception e){
             logger.error("Failed to upload quiz question sequence to Redis for quizID: {}", quizID, e);
             throw e;
         }
 
         logger.info("Uploaded {} question sequence to Redis for quizID: {} with TTL: {} seconds. Redis key: {}",
-                questionPositionList.size(), quizID, ttlInSeconds, Key);
+                questionPositionList.size(), quizID, ttl, Key);
 
     }
 

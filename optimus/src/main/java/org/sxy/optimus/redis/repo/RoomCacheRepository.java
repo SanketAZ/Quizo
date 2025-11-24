@@ -1,4 +1,4 @@
-package org.sxy.optimus.redis;
+package org.sxy.optimus.redis.repo;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,14 +23,13 @@ import java.util.stream.Collectors;
 
 @Component
 @Validated
-public class RedisCacheRoomRepository {
+public class RoomCacheRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisCacheRoomRepository.class);
-
+    private static final Logger logger = LoggerFactory.getLogger(RoomCacheRepository.class);
 
     private final RedisTemplate<String,RoomUserDetails> redisTemplateRoomUserDetails;
 
-    public RedisCacheRoomRepository(@Qualifier("String-RoomUserDetails")RedisTemplate<String, RoomUserDetails> roomUserDetails) {
+    public RoomCacheRepository(@Qualifier("String-RoomUserDetails")RedisTemplate<String, RoomUserDetails> roomUserDetails) {
         redisTemplateRoomUserDetails = roomUserDetails;
     }
 

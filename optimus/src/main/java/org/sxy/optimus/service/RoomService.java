@@ -9,14 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.pojo.RoomUserDetails;
-import org.sxy.optimus.dto.quiz.QuizDisplayDTO;
 import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.event.RoomUserDetailsCachedEvent;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
@@ -24,14 +21,12 @@ import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.mapper.RoomMapper;
-import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.Room;
 import org.sxy.optimus.module.RoomQuiz;
 import org.sxy.optimus.module.RoomUser;
 import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.module.compKey.RoomUserId;
-import org.sxy.optimus.projection.RoomUserIdProjection;
-import org.sxy.optimus.redis.RedisCacheRoomRepository;
+import org.sxy.optimus.redis.repo.RoomCacheRepository;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
 import org.sxy.optimus.repo.RoomUserRepo;
@@ -58,7 +53,7 @@ public class RoomService {
     private EntityManager em;
 
     @Autowired
-    private RedisCacheRoomRepository redisRoomRepository;
+    private RoomCacheRepository redisRoomRepository;
 
     @Autowired
     private ValidationService validationService;

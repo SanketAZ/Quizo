@@ -1,8 +1,6 @@
-package org.sxy.optimus.dto.question;
+package org.sxy.optimus.redis.dto;
 
 import jakarta.validation.constraints.NotEmpty;
-import org.sxy.optimus.dto.option.OptionCacheDTO;
-import org.sxy.optimus.dto.option.OptionDTO;
 
 import java.util.List;
 

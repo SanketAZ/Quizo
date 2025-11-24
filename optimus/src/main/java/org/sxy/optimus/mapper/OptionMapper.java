@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.sxy.optimus.dto.option.*;
 import org.sxy.optimus.module.Option;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
+import org.sxy.optimus.redis.dto.OptionCacheDTO;
 
 import java.util.List;
 
