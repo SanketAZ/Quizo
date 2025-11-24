@@ -5,6 +5,7 @@ import org.mapstruct.factory.Mappers;
 import org.sxy.optimus.dto.question.*;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
 
 import java.util.List;
 
@@ -23,5 +24,9 @@ public interface QuestionMapper{
 
     QuestionDTO toQuestionDTO(QuestionWithOptionsProjection question);
 
+    QuestionDTO toQuestionDTO(Question question);
+    QuestionDTO toQuestionDTO(QuestionCacheDTO questionCacheDTO);
+
     QuestionCacheDTO toQuestionCacheDTO(Question question);
+    QuestionCacheDTO toQuestionCacheDTO(QuestionDTO questionDTO);
 }

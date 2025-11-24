@@ -4,18 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
+import org.sxy.frontier.dto.QuizDetailDTO;
 import org.sxy.frontier.event.ParticipantQuizSessionCachedEvent;
 import org.sxy.frontier.exception.ResourceDoesNotExitsException;
 import org.sxy.frontier.mapper.ParticipantQuizSessionMapper;
 import org.sxy.frontier.module.ParticipantQuizSession;
-import org.sxy.frontier.redis.repo.ParticipantQuizSessionCacheRepo;
-import org.sxy.frontier.redis.dto.ParticipantQuizSessionCacheDTO;
-import org.sxy.frontier.redis.dto.QuizDetailCacheDTO;
-import org.sxy.frontier.redis.service.ParticipantQuizSessionCacheService;
 import org.sxy.frontier.repo.ParticipantQuizSessionRepo;
 
 import java.time.Clock;
@@ -30,16 +26,13 @@ public class ParticipantQuizSessionService {
     @Autowired
     private ParticipantQuizSessionRepo participantQuizSessionRepo;
     @Autowired
-    private ParticipantQuizSessionCacheService participantQuizSessionCacheService;
+    private ParticipantQuizSessionDataService participantQuizSessionDataService;
     @Autowired
     private ParticipantQuizSessionMapper participantQuizSessionMapper;
     @Autowired
-    @Lazy
-    private AccessControlService accessControlService;
+    private QuizDataService quizDataService;
     @Autowired
     private ApplicationEventPublisher publisher;
-    @Autowired
-    private QuizService quizService;
     @Autowired
     private Clock clock;
 
@@ -54,8 +47,8 @@ public class ParticipantQuizSessionService {
 
         Instant currentTime = Instant.now(clock);
 
-        QuizDetailCacheDTO quizDetail=quizService.getQuizDetail(roomId,quizId);
-        Instant quizEndTime = Instant.parse(quizDetail.getStartTime())
+        QuizDetailDTO quizDetail= quizDataService.getQuizDetail(roomId,quizId);
+        Instant quizEndTime = quizDetail.getStartTime()
                 .plus(Duration.ofSeconds(quizDetail.getDurationSec()));
 
         ParticipantQuizSession participantQuizSession=ParticipantQuizSession.builder().roomId(roomId)
@@ -79,15 +72,14 @@ public class ParticipantQuizSessionService {
     }
 
     public ParticipantQuizSessionDTO getParticipantQuizSession(UUID sessionId){
-        Optional<ParticipantQuizSessionCacheDTO> cachedOp=participantQuizSessionCacheService.getParticipantQuizSessionCache(sessionId);
+        Optional<ParticipantQuizSessionDTO> cachedOp=participantQuizSessionDataService.getParticipantQuizSession(sessionId);
 
         if (cachedOp.isEmpty()) {
             log.warn("Session not found: sessionId={}", sessionId);
             throw new ResourceDoesNotExitsException("Participant Quiz session not found for id: " + sessionId);
         }
-        ParticipantQuizSessionCacheDTO cacheDTO=cachedOp.get();
 
-        return participantQuizSessionMapper.toParticipantQuizSessionDTO(cacheDTO);
+        return cachedOp.get();
     }
 
     public Optional<ParticipantQuizSessionDTO> getParticipantQuizSession(UUID roomId, UUID quizId, UUID userId) {

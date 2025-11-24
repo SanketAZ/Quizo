@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.sxy.frontier.client.OptimusServiceClient;
 import org.sxy.frontier.dto.AnswerEvaluation;
 import org.sxy.frontier.dto.option.OptionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
@@ -13,9 +12,6 @@ import org.sxy.frontier.dto.question.QuestionDTO;
 import org.sxy.frontier.exception.InvalidSubmissionException;
 import org.sxy.frontier.exception.ResourceDoesNotExitsException;
 import org.sxy.frontier.mapper.QuizMapper;
-import org.sxy.frontier.redis.repo.QuizCacheRepo;
-import org.sxy.frontier.redis.dto.QuestionCacheDTO;
-import org.sxy.frontier.redis.dto.QuizDetailCacheDTO;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,29 +21,15 @@ public class QuizService {
 
     private static final Logger log = LoggerFactory.getLogger(QuizService.class);
     @Autowired
-    private QuizCacheRepo quizCacheRepo;
-    @Autowired
     private QuizMapper quizMapper;
     @Autowired
-    private OptimusServiceClient optimusServiceClient;
+    private QuizDataService quizDataService;
 
     public ActiveQuizQuestionDTO fetchActiveQuizQuestion(UUID roomId, UUID quizId, UUID questionID){
         log.info("Fetching ActiveQuizQuestion: roomId={}, quizId={}, questionId={}",
                 roomId, quizId, questionID);
-
-        Optional<QuestionCacheDTO>questionCacheDTO=quizCacheRepo.getQuestion(roomId,quizId,questionID);
-        if(questionCacheDTO.isPresent()){
-            log.debug("Cache HIT for questionId={} in quizId={} roomId={}", questionID, quizId, roomId);
-
-            QuestionCacheDTO questionCache=questionCacheDTO.get();
-            log.info("Returning question from cache: questionId={}", questionID);
-            return quizMapper.toActiveQuizQuestionDTO(questionCache);
-        }
-        log.warn("Cache MISS for questionId={} in quizId={} roomId={}. Fetching from Optimus service.",
-                questionID, quizId, roomId);
-        //cache miss, need to call the optimus service
-        QuestionCacheDTO questionCache=optimusServiceClient.getQuestionCache(roomId,quizId,questionID);
-        return quizMapper.toActiveQuizQuestionDTO(questionCache);
+        QuestionDTO questionDTO= quizDataService.getQuestion(roomId,quizId,questionID);
+        return quizMapper.toActiveQuizQuestionDTO(questionDTO);
     }
 
     public AnswerEvaluation evaluateAnswer(UUID roomId, UUID quizId, AnswerSubmissionReqDTO answerSubmissionReqDTO){
@@ -55,24 +37,8 @@ public class QuizService {
         UUID questionID=UUID.fromString(answerSubmissionReqDTO.getQuestionId());
         UUID submittedOptionID=UUID.fromString(answerSubmissionReqDTO.getOptionId());
 
-        Optional<QuestionCacheDTO> cached=quizCacheRepo.getQuestion(roomId,quizId,questionID);
-        final QuestionCacheDTO questionCache;
-        if (cached.isPresent()) {
-            questionCache = cached.get();
-            log.debug("Cache HIT for questionId={} in quizId={}", questionID, quizId);
-        } else {
-            log.debug("Cache MISS for questionId={} in quizId={} – fetching from Optimus", questionID, quizId);
-            questionCache = optimusServiceClient.getQuestionCache(roomId, quizId, questionID);
-        }
-        QuestionDTO questionDTO=quizMapper.toQuestionDTO(questionCache);
+        QuestionDTO questionDTO= quizDataService.getQuestion(roomId,quizId,questionID);
         return checkAnswer(questionDTO,submittedOptionID,roomId,quizId);
-    }
-
-    public QuizDetailCacheDTO getQuizDetail(UUID roomId, UUID quizId){
-        Optional<QuizDetailCacheDTO> quizDetailOpt=quizCacheRepo.getQuizDetails(roomId,quizId);
-        QuizDetailCacheDTO quizDetail = quizDetailOpt.orElseGet(
-                () -> optimusServiceClient.getQuizDetails(roomId, quizId));
-        return quizDetail;
     }
 
     private AnswerEvaluation checkAnswer(QuestionDTO questionDTO,UUID submittedOptionId,UUID roomId,UUID quizId){

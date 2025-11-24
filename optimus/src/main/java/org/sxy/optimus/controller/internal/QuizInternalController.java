@@ -4,9 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.sxy.optimus.dto.question.QuestionCacheDTO;
+import org.sxy.optimus.dto.question.QuestionDTO;
+import org.sxy.optimus.dto.quiz.QuizDetailDTO;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
 import org.sxy.optimus.dto.question.QuestionPositionDTO;
-import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 import org.sxy.optimus.service.QuizService;
 
 import java.util.List;
@@ -19,26 +21,26 @@ public class QuizInternalController {
     @Autowired
     private QuizService quizService;
 
-    @GetMapping("/{quizId}/room/{roomId}/details")
-    public ResponseEntity<QuizDetailCacheDTO> getQuizDetailsCache(@PathVariable UUID quizId, @PathVariable UUID roomId){
+    @GetMapping("/{quizId}/room/{roomId}/detail")
+    public ResponseEntity<QuizDetailDTO> getQuizDetail(@PathVariable UUID quizId, @PathVariable UUID roomId){
 
-        QuizDetailCacheDTO resDTO=quizService.getOrLoadQuizDetailCache(roomId,quizId);
+        QuizDetailDTO resDTO=quizService.getQuizDetail(roomId,quizId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(resDTO);
 
     }
     @GetMapping("/{quizId}/room/{roomId}/question-positions")
-    public ResponseEntity<List<QuestionPositionDTO>> getQuestionPositionCache(@PathVariable UUID quizId, @PathVariable UUID roomId, @RequestParam("sequence") String sequence){
-        List<QuestionPositionDTO> resDTO=quizService.getOrLoadQuestionPositionCache(sequence, roomId,quizId);
+    public ResponseEntity<List<QuestionPositionDTO>> getQuestionPosition(@PathVariable UUID quizId, @PathVariable UUID roomId, @RequestParam("sequence") String sequence){
+        List<QuestionPositionDTO> resDTO=quizService.getQuestionPosition(sequence, roomId,quizId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(resDTO);
     }
 
     @GetMapping("/{quizId}/room/{roomId}/question/{questionId}")
-    public ResponseEntity<QuestionCacheDTO> getQuestionCacheDTO(@PathVariable UUID quizId, @PathVariable UUID roomId, @PathVariable UUID questionId){
-        QuestionCacheDTO res=quizService.getOrLoadQuestionCacheDTO(roomId,quizId, questionId);
+    public ResponseEntity<QuestionDTO> getQuestion(@PathVariable UUID quizId, @PathVariable UUID roomId, @PathVariable UUID questionId){
+        QuestionDTO res=quizService.getQuestion(roomId,quizId, questionId);
         return ResponseEntity
                 .ok()
                 .body(res);

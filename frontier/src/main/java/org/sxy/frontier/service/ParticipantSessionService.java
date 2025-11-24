@@ -12,7 +12,6 @@ import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionResDTO;
 import org.sxy.frontier.event.ParticipantQuizSessionCachedEvent;
 import org.sxy.frontier.mapper.SubmissionMapper;
-import org.sxy.frontier.module.ParticipantQuizSession;
 import org.sxy.frontier.redis.repo.QuizCacheRepo;
 import org.sxy.frontier.repo.ParticipantQuizSessionRepo;
 
@@ -50,6 +49,8 @@ public class ParticipantSessionService {
 
     @Autowired
     ApplicationEventPublisher publisher;
+    @Autowired
+    private QuizDataService quizDataService;
 
     public ActiveQuizQuestionDTO fetchQuestion(UUID roomId,UUID quizId,UUID userId,int qIndex,String sequence){
         log.info("Fetching question started: roomId={}, quizId={}, userId={}, qIndex={}, sequence={}",
@@ -57,7 +58,8 @@ public class ParticipantSessionService {
 
         accessControlService.validateQuizLive(quizId,roomId);
         accessControlService.validateUserInRoom(roomId,userId);
-        UUID questionId=accessControlService.validateQIndex(roomId,quizId,qIndex,"A");
+
+        UUID questionId= quizDataService.getQuestionId(roomId,quizId,qIndex,sequence);
 
         log.info("Successfully fetched question: quizId={}, roomId={}, questionId={}", quizId, roomId, questionId);
 

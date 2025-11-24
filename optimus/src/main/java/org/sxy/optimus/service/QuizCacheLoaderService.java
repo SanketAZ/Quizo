@@ -4,17 +4,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.sxy.optimus.dto.question.QuestionCacheDTO;
+import org.sxy.optimus.redis.dto.QuestionCacheDTO;
 import org.sxy.optimus.dto.question.QuestionPositionDTO;
-import org.sxy.optimus.dto.quiz.QuizDetailCacheDTO;
+import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
-import org.sxy.optimus.module.QuizQuestionSequence;
 import org.sxy.optimus.module.compKey.RoomQuizId;
-import org.sxy.optimus.redis.RedisCacheQuizRepository;
+import org.sxy.optimus.redis.repo.QuizCacheRepository;
 import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomQuizRepo;
@@ -30,7 +29,7 @@ public class QuizCacheLoaderService {
     private static final Logger log = LoggerFactory.getLogger(QuizCacheLoaderService.class);
 
     @Autowired
-    private RedisCacheQuizRepository cacheQuizRepository;
+    private QuizCacheRepository cacheQuizRepository;
 
     @Autowired
     private QuizRepo quizRepo;
@@ -89,13 +88,13 @@ public class QuizCacheLoaderService {
 
         try {
             //Uploading the quiz details to redis
-            cacheQuizRepository.uploadQuizDetails(quizDetailCacheDTO,ttlForQuiz);
+            cacheQuizRepository.uploadQuizDetails(quizDetailCacheDTO,Duration.ofSeconds(ttlForQuiz));
 
             //Uploading the questions of quiz to redis
-            cacheQuizRepository.uploadQuizQuestions(questionsToCache,quizId,roomId,ttlForQuiz);
+            cacheQuizRepository.uploadQuizQuestions(questionsToCache,quizId,roomId,Duration.ofSeconds(ttlForQuiz));
 
             //uploading the question sequence to redis
-            cacheQuizRepository.uploadQuizQuestionSequence(questionPositions,defaultSequenceName,quizId,roomId,ttlForQuiz);
+            cacheQuizRepository.uploadQuizQuestionSequence(questionPositions,defaultSequenceName,quizId,roomId,Duration.ofSeconds(ttlForQuiz));
         }catch (Exception e){
             log.error("Exception occurred while uploading the quiz to redis {}",e.getMessage());
         }

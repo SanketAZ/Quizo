@@ -1,4 +1,4 @@
-package org.sxy.frontier.redis.dto;
+package org.sxy.optimus.redis.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,9 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class QuizDetailCacheDTO {
 
         private String quizId;
@@ -28,5 +28,4 @@ public class QuizDetailCacheDTO {
         private Long startTime;
 
         private String status;
-
 }

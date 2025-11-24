@@ -5,9 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.sxy.optimus.event.QuizDetailCachedEvent;
 import org.sxy.optimus.event.RoomUserDetailsCachedEvent;
-import org.sxy.optimus.redis.RedisCacheRoomRepository;
+import org.sxy.optimus.redis.repo.RoomCacheRepository;
 
 import java.util.List;
 
@@ -15,9 +14,9 @@ import java.util.List;
 public class RoomApplicationEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(RoomApplicationEventListener.class);
-    private final RedisCacheRoomRepository redisCacheRoomRepository;
+    private final RoomCacheRepository redisCacheRoomRepository;
 
-    public RoomApplicationEventListener(RedisCacheRoomRepository redisCacheRoomRepository) {
+    public RoomApplicationEventListener(RoomCacheRepository redisCacheRoomRepository) {
         this.redisCacheRoomRepository = redisCacheRoomRepository;
     }
 
