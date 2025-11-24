@@ -40,32 +40,10 @@ public class ParticipantQuizSessionCacheService {
     private Clock clock;
 
     public Optional<ParticipantQuizSessionCacheDTO> getParticipantQuizSessionCache(UUID sessionId){
-        log.debug("Getting participant quiz session cache: sessionId={}", sessionId);
-
-        Optional<ParticipantQuizSessionCacheDTO> cachedSessionOp=participantQuizSessionCacheRepo.getParticipantQuizSessionCache(sessionId);
-
-        if(cachedSessionOp.isPresent()){
-            log.debug("Cache HIT for sessionId={}", sessionId);
-            return cachedSessionOp;
-        }
-        log.debug("Cache MISS for sessionId={}, loading from DB", sessionId);
-
-        Optional<ParticipantQuizSession> participantQuizSessionOp=participantQuizSessionRepo.findById(sessionId);
-        if(participantQuizSessionOp.isEmpty()){
-            log.warn("Session not found in DB: sessionId={}",
-                    sessionId);
-            return Optional.empty();
-        }
-
-        //warm cache
-        ParticipantQuizSession sessionEntity=participantQuizSessionOp.get();
-        ParticipantQuizSessionDTO sessionDTO=participantQuizSessionMapper.toParticipantQuizSessionDTO(sessionEntity);
-        ParticipantQuizSessionCacheDTO cacheDTO=warmCacheParticipantQuizSession(sessionDTO);
-
-        return Optional.of(cacheDTO);
+        return participantQuizSessionCacheRepo.getParticipantQuizSessionCache(sessionId);
     }
 
-    public void cacheParticipantQuizSession(ParticipantQuizSessionDTO sessionDTO){
+    public ParticipantQuizSessionCacheDTO cacheParticipantQuizSession(ParticipantQuizSessionDTO sessionDTO){
         log.debug("Caching participant quiz session: sessionId={}", sessionDTO.getSessionId());
 
         ParticipantQuizSessionCacheDTO cacheDTO=participantQuizSessionMapper.toParticipantQuizSessionCacheDTO(sessionDTO);
@@ -79,6 +57,7 @@ public class ParticipantQuizSessionCacheService {
             log.error("Failed to cache session: sessionId={}",
                     sessionDTO.getSessionId(), e);
         }
+        return cacheDTO;
     }
 
     public void invalidateParticipantQuizSessionCache(UUID sessionId){
@@ -97,16 +76,7 @@ public class ParticipantQuizSessionCacheService {
     }
 
     private ParticipantQuizSessionCacheDTO warmCacheParticipantQuizSession(ParticipantQuizSessionDTO sessionDTO){
-        ParticipantQuizSessionCacheDTO cacheDTO=participantQuizSessionMapper.toParticipantQuizSessionCacheDTO(sessionDTO);
-        Duration ttl=calculateTTLDuration(sessionDTO);
-
-        try {
-            participantQuizSessionCacheRepo.saveParticipantQuizSessionCache(cacheDTO,ttl);
-        }catch (Exception e){
-            log.error("Failed to warm cache for sessionId={}",
-                    cacheDTO.getSessionId(), e);
-        }
-        return cacheDTO;
+        return cacheParticipantQuizSession(sessionDTO);
     }
 
     public Duration calculateTTLDuration(ParticipantQuizSessionDTO sessionDTO){

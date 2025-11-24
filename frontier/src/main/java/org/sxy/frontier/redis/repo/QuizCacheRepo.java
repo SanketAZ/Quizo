@@ -67,8 +67,9 @@ public class    QuizCacheRepo {
         return hashOpsString.hasKey(key,qIndex.toString());
     }
 
-    public String getQuestionIdFromIndex(UUID roomId, UUID quizId,Integer qIndex) {
-        String key=RedisKeys.buildQuizSequenceKey(quizId.toString(),roomId.toString(),"A");
-        return hashOpsString.get(key,qIndex.toString());
+    public Optional<String> getQuestionIdFromIndex(UUID roomId, UUID quizId, Integer qIndex, String seqLabel) {
+        String key=RedisKeys.buildQuizSequenceKey(quizId.toString(),roomId.toString(),seqLabel);
+        String questionId=hashOpsString.get(key,qIndex.toString());
+        return Optional.ofNullable(questionId);
     }
 }

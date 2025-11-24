@@ -103,7 +103,7 @@ class QuizServiceTest {
             assertEquals(activeQuizQuestionDTO.getText(),res.getText());
             verify(quizCacheRepo,times(1)).getQuestion(roomId,quizId,questionId);
             verify(quizMapper,times(1)).toActiveQuizQuestionDTO(questionCache);
-            verify(optimusServiceClient,times(0)).getQuestionCache(roomId,quizId,questionId);
+            verify(optimusServiceClient,times(0)).getQuestion(roomId,quizId,questionId);
 
         }
 

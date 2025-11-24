@@ -1,21 +1,23 @@
-package org.sxy.frontier.redis.dto;
+package org.sxy.frontier.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuizDetailCacheDTO {
+public class QuizDetailDTO {
+        private UUID quizId;
 
-        private String quizId;
+        private UUID roomId;
 
-        private String roomId;
-
-        private String creatorUserId;
+        private UUID creatorUserId;
 
         private String title;
 
@@ -25,8 +27,7 @@ public class QuizDetailCacheDTO {
 
         private Integer durationSec;
 
-        private Long startTime;
+        private Instant startTime;
 
         private String status;
-
 }
