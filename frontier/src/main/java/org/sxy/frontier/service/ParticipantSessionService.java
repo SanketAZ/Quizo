@@ -52,18 +52,21 @@ public class ParticipantSessionService {
     @Autowired
     private QuizDataService quizDataService;
 
-    public ActiveQuizQuestionDTO fetchQuestion(UUID roomId,UUID quizId,UUID userId,int qIndex,String sequence){
-        log.info("Fetching question started: roomId={}, quizId={}, userId={}, qIndex={}, sequence={}",
-                roomId, quizId, userId, qIndex, sequence);
+    public ActiveQuizQuestionDTO fetchQuestion(UUID userId,UUID sessionId,int qIndex){
+        log.info("Fetching question : sessionId={},qIndex={}, userId={}", sessionId, qIndex,userId);
 
-        accessControlService.validateQuizLive(quizId,roomId);
-        accessControlService.validateUserInRoom(roomId,userId);
+        accessControlService.validateParticipantQuizSession(userId,sessionId);
+        ParticipantQuizSessionDTO participantQuizSession=participantQuizSessionService.getParticipantQuizSession(sessionId);
+        UUID roomId=participantQuizSession.getRoomId();
+        UUID quizId=participantQuizSession.getQuizId();
+        String sequence=participantQuizSession.getSequenceLabel();
 
         UUID questionId= quizDataService.getQuestionId(roomId,quizId,qIndex,sequence);
 
+        ActiveQuizQuestionDTO activeQuizQuestionDTO=quizService.fetchActiveQuizQuestion(roomId,quizId,questionId);
         log.info("Successfully fetched question: quizId={}, roomId={}, questionId={}", quizId, roomId, questionId);
 
-        return quizService.fetchActiveQuizQuestion(roomId,quizId,questionId);
+        return activeQuizQuestionDTO;
     }
 
     public AnswerSubmissionResDTO submitQuestion(UUID roomId, UUID quizId, UUID userId, AnswerSubmissionReqDTO answerSubmissionReqDTO){

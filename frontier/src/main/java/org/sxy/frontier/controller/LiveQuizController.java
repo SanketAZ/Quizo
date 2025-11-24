@@ -19,12 +19,11 @@ public class LiveQuizController {
     @Autowired
     private ParticipantSessionService  participantSessionService;
 
-    @GetMapping("/{roomId}/{quizId}")
-    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String roomId, @PathVariable String quizId, @RequestParam("qIndex")int qIndex, @RequestParam("seqLabel")String seqLabel) {
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        UUID roomID=UUID.fromString(roomId);
-        UUID quizID=UUID.fromString(quizId);
-        ActiveQuizQuestionDTO res=participantSessionService.fetchQuestion(roomID,quizID,userId,qIndex,seqLabel);
+    @GetMapping("/session/{sessionId}/question/{questionNumber}")
+    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String sessionId, @PathVariable int questionNumber) {
+        UUID sessionID = UUID.fromString(sessionId);
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        ActiveQuizQuestionDTO res = participantSessionService.fetchQuestion(sessionID, userId, questionNumber);
         return ResponseEntity
                 .ok()
                 .body(res);
