@@ -7,11 +7,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.sxy.frontier.dto.AnswerEvaluation;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
+import org.sxy.frontier.dto.SubmissionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionResDTO;
 import org.sxy.frontier.event.ParticipantQuizSessionCachedEvent;
+import org.sxy.frontier.event.SubmissionCachedEvent;
 import org.sxy.frontier.mapper.SubmissionMapper;
+import org.sxy.frontier.module.Submission;
+import org.sxy.frontier.redis.dto.SubmissionCacheDTO;
 import org.sxy.frontier.redis.repo.QuizCacheRepo;
 import org.sxy.frontier.repo.ParticipantQuizSessionRepo;
 
@@ -51,11 +55,13 @@ public class ParticipantSessionService {
     ApplicationEventPublisher publisher;
     @Autowired
     private QuizDataService quizDataService;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public ActiveQuizQuestionDTO fetchQuestion(UUID userId,UUID sessionId,int qIndex){
         log.info("Fetching question : sessionId={},qIndex={}, userId={}", sessionId, qIndex,userId);
 
-        accessControlService.validateParticipantQuizSession(userId,sessionId);
+        accessControlService.validateParticipantQuizSession(sessionId,userId);
         ParticipantQuizSessionDTO participantQuizSession=participantQuizSessionService.getParticipantQuizSession(sessionId);
         UUID roomId=participantQuizSession.getRoomId();
         UUID quizId=participantQuizSession.getQuizId();
@@ -69,19 +75,25 @@ public class ParticipantSessionService {
         return activeQuizQuestionDTO;
     }
 
-    public AnswerSubmissionResDTO submitQuestion(UUID roomId, UUID quizId, UUID userId, AnswerSubmissionReqDTO answerSubmissionReqDTO){
-        log.info("Submit answer request: roomId={}, quizId={}, userId={}, questionId={}",
-                roomId, quizId, userId, answerSubmissionReqDTO.getQuestionId());
+    public AnswerSubmissionResDTO submitQuestion(UUID userId, UUID sessionId,AnswerSubmissionReqDTO answerSubmissionReqDTO){
+        log.info("Submit answer request: sessionId={}, userId={}, questionId={}",
+                sessionId, userId, answerSubmissionReqDTO.getQuestionId());
 
         Instant submittedAt = Instant.now(clock);
-        accessControlService.validateQuizLive(quizId,roomId);
-        accessControlService.validateUserInRoom(roomId,userId);
+
+        accessControlService.validateParticipantQuizSession(sessionId,userId);
+        ParticipantQuizSessionDTO participantQuizSession=participantQuizSessionService.getParticipantQuizSession(sessionId);
+        UUID roomId=participantQuizSession.getRoomId();
+        UUID quizId=participantQuizSession.getQuizId();
+
         AnswerEvaluation res = quizService.evaluateAnswer(roomId,quizId,answerSubmissionReqDTO);
-        submissionService.saveSubmission(userId,roomId,quizId,submittedAt,res);
+        Submission submission=submissionService.saveSubmission(userId,roomId,quizId,submittedAt,res);
+        SubmissionDTO submissionDTO=submissionMapper.toSubmissionDTO(submission);
 
         log.info("Answer evaluated successfully for roomId={}, quizId={}, userId={}, questionId={}",
                 roomId, quizId, userId, res.getQuestionId());
 
+        eventPublisher.publishEvent(new SubmissionCachedEvent(submissionDTO));
         return submissionMapper.toAnswerSubmissionResDTO(res);
     }
 

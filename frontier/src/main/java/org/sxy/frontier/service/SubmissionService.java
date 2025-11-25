@@ -48,7 +48,7 @@ public class SubmissionService {
                 savedSubmission.getSubmissionId(),
                 savedSubmission.getUserId(),
                 savedSubmission.getQuizId(),
-                savedSubmission.isCorrect(),
+                savedSubmission.getIsCorrect(),
                 savedSubmission.getObtainedMarks());
 
         return savedSubmission;

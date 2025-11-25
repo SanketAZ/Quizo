@@ -72,14 +72,14 @@ public class ParticipantQuizSessionService {
     }
 
     public ParticipantQuizSessionDTO getParticipantQuizSession(UUID sessionId){
-        Optional<ParticipantQuizSessionDTO> cachedOp=participantQuizSessionDataService.getParticipantQuizSession(sessionId);
+        Optional<ParticipantQuizSessionDTO> participantQuizSessionOp=participantQuizSessionDataService.getParticipantQuizSession(sessionId);
 
-        if (cachedOp.isEmpty()) {
+        if (participantQuizSessionOp.isEmpty()) {
             log.warn("Session not found: sessionId={}", sessionId);
             throw new ResourceDoesNotExitsException("Participant Quiz session not found for id: " + sessionId);
         }
 
-        return cachedOp.get();
+        return participantQuizSessionOp.get();
     }
 
     public Optional<ParticipantQuizSessionDTO> getParticipantQuizSession(UUID roomId, UUID quizId, UUID userId) {

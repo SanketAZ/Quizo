@@ -1,6 +1,7 @@
 package org.sxy.frontier.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
@@ -23,21 +24,20 @@ public class LiveQuizController {
     public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String sessionId, @PathVariable int questionNumber) {
         UUID sessionID = UUID.fromString(sessionId);
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
-        ActiveQuizQuestionDTO res = participantSessionService.fetchQuestion(sessionID, userId, questionNumber);
+        ActiveQuizQuestionDTO res = participantSessionService.fetchQuestion(userId, sessionID, questionNumber);
         return ResponseEntity
                 .ok()
                 .body(res);
     }
 
-    @PostMapping("/{roomId}/{quizId}")
-    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String roomId, @PathVariable String quizId, @RequestBody AnswerSubmissionReqDTO answerSubmissionReqDTO) {
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        UUID roomID=UUID.fromString(roomId);
-        UUID quizID=UUID.fromString(quizId);
-        AnswerSubmissionResDTO res=participantSessionService.submitQuestion(roomID,quizID,userId,answerSubmissionReqDTO);
+    @PostMapping("/session/{sessionId}/submission")
+    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String sessionId,@RequestBody AnswerSubmissionReqDTO answerSubmissionReqDTO) {
+        UUID sessionID = UUID.fromString(sessionId);
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        AnswerSubmissionResDTO result=participantSessionService.submitQuestion(userId,sessionID,answerSubmissionReqDTO);
         return ResponseEntity
-                .ok()
-                .body(res);
+                .status(HttpStatus.CREATED)
+                .body(result);
     }
 
     @PostMapping("/{roomId}/{quizId}/start")
