@@ -18,6 +18,9 @@ public class RedisKeys {
     public static String buildParticipantQuizSessionKey(String sessionId){
         return formKey(List.of("participant_quiz_session","session",sessionId));
     }
+    public static String buildSubmissionKey(String roomId,String quizId,String questionId,String userId){
+        return formKey(List.of("submissions","room",roomId,"quiz",quizId,"userId",userId,"question",questionId));
+    }
     private static String formKey(List<String> segments){
         return String.join(":", segments);
     }
