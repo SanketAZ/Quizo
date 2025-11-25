@@ -13,4 +13,5 @@ public interface SubmissionRepo extends JpaRepository<Submission, UUID> {
             UUID roomId,
             UUID questionId
     );
+    boolean existsByUserIdAndQuizIdAndRoomIdAndQuestionId(UUID userId, UUID quizId, UUID roomId, UUID questionId);
 }

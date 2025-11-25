@@ -85,6 +85,8 @@ public class ParticipantSessionService {
         ParticipantQuizSessionDTO participantQuizSession=participantQuizSessionService.getParticipantQuizSession(sessionId);
         UUID roomId=participantQuizSession.getRoomId();
         UUID quizId=participantQuizSession.getQuizId();
+        UUID questionId=UUID.fromString(answerSubmissionReqDTO.getQuestionId());
+        accessControlService.validateSubmissionStatus(roomId,quizId,questionId,userId);
 
         AnswerEvaluation res = quizService.evaluateAnswer(roomId,quizId,answerSubmissionReqDTO);
         Submission submission=submissionService.saveSubmission(userId,roomId,quizId,submittedAt,res);

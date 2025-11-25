@@ -57,4 +57,20 @@ public class SubmissionDataService {
         submissionCacheService.cacheSubmission(submissionDTO);
         return submissionDTO;
     }
+
+    public boolean isQuestionSubmitted(UUID roomId, UUID quizId, UUID questionId, UUID userId) {
+        log.debug("Checking if question submitted: userId={}, quizId={}, roomId={}, questionId={}",
+                userId, quizId, roomId, questionId);
+
+        Optional<SubmissionCacheDTO> cacheOp=submissionCacheService.getSubmission(roomId,quizId,questionId,userId);
+        if(cacheOp.isPresent()){
+            log.debug("Cache hit - Question already submitted: questionId={}, userId={}",
+                    questionId, userId);
+            return true;
+        }
+        log.debug("Cache miss - Checking database for submission");
+
+        return submissionRepo.existsByUserIdAndQuizIdAndRoomIdAndQuestionId(
+                userId,quizId,roomId,questionId);
+    }
 }
