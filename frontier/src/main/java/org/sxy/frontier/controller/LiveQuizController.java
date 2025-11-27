@@ -1,5 +1,7 @@
 package org.sxy.frontier.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,17 +23,17 @@ public class LiveQuizController {
     private ParticipantSessionService  participantSessionService;
 
     @GetMapping("/session/{sessionId}/question/{questionNumber}")
-    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String sessionId, @PathVariable int questionNumber) {
+    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String sessionId, @PathVariable @Min(1) int questionNumber) {
         UUID sessionID = UUID.fromString(sessionId);
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
-        ActiveQuizQuestionDTO res = participantSessionService.fetchQuestion(userId, sessionID, questionNumber);
+        ActiveQuizQuestionDTO res = participantSessionService.fetchActiveQuizQuestion(userId, sessionID, questionNumber);
         return ResponseEntity
                 .ok()
                 .body(res);
     }
 
     @PostMapping("/session/{sessionId}/submission")
-    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String sessionId,@RequestBody AnswerSubmissionReqDTO answerSubmissionReqDTO) {
+    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String sessionId,@RequestBody @Valid AnswerSubmissionReqDTO answerSubmissionReqDTO) {
         UUID sessionID = UUID.fromString(sessionId);
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
         AnswerSubmissionResDTO result=participantSessionService.submitQuestion(userId,sessionID,answerSubmissionReqDTO);

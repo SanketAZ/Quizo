@@ -5,14 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.sxy.frontier.dto.AnswerEvaluation;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
 import org.sxy.frontier.dto.SubmissionDTO;
 import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionResDTO;
+import org.sxy.frontier.dto.question.QuestionDTO;
 import org.sxy.frontier.event.ParticipantQuizSessionCachedEvent;
 import org.sxy.frontier.event.SubmissionCachedEvent;
+import org.sxy.frontier.mapper.QuizMapper;
 import org.sxy.frontier.mapper.SubmissionMapper;
 import org.sxy.frontier.module.Submission;
 import org.sxy.frontier.redis.dto.SubmissionCacheDTO;
@@ -29,28 +32,24 @@ public class ParticipantSessionService {
     private static final Logger log = LoggerFactory.getLogger(ParticipantSessionService.class);
     @Autowired
     private QuizCacheRepo quizCacheRepo;
-
     @Autowired
     private ParticipantQuizSessionRepo participantQuizSessionRepo;
-
     @Autowired
     private QuizService quizService;
-
     @Autowired
     private AccessControlService accessControlService;
-
     @Autowired
     private SubmissionService submissionService;
-
+    @Autowired
+    private SubmissionDataService submissionDataService;
     @Autowired
     private SubmissionMapper submissionMapper;
-
+    @Autowired
+    private QuizMapper quizMapper;
     @Autowired
     private Clock clock;
-
     @Autowired
     private ParticipantQuizSessionService participantQuizSessionService;
-
     @Autowired
     ApplicationEventPublisher publisher;
     @Autowired
@@ -58,8 +57,8 @@ public class ParticipantSessionService {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
-    public ActiveQuizQuestionDTO fetchQuestion(UUID userId,UUID sessionId,int qIndex){
-        log.info("Fetching question : sessionId={},qIndex={}, userId={}", sessionId, qIndex,userId);
+    public ActiveQuizQuestionDTO fetchActiveQuizQuestion(UUID userId,UUID sessionId,int qIndex){
+        log.info("Fetching question : sessionId={},qIndex={},userId={}", sessionId, qIndex,userId);
 
         accessControlService.validateParticipantQuizSession(sessionId,userId);
         ParticipantQuizSessionDTO participantQuizSession=participantQuizSessionService.getParticipantQuizSession(sessionId);
@@ -69,12 +68,16 @@ public class ParticipantSessionService {
 
         UUID questionId= quizDataService.getQuestionId(roomId,quizId,qIndex,sequence);
 
-        ActiveQuizQuestionDTO activeQuizQuestionDTO=quizService.fetchActiveQuizQuestion(roomId,quizId,questionId);
+        QuestionDTO questionDTO=quizService.getQuizQuestion(roomId,quizId,questionId);
+        Optional<SubmissionDTO> submissionOp=submissionDataService.findSubmission(roomId,quizId,questionId,userId);
+
+        ActiveQuizQuestionDTO activeQuizQuestionDTO=formActiveQuizQuestion(questionDTO,submissionOp);
         log.info("Successfully fetched question: quizId={}, roomId={}, questionId={}", quizId, roomId, questionId);
 
         return activeQuizQuestionDTO;
     }
 
+    @Transactional
     public AnswerSubmissionResDTO submitQuestion(UUID userId, UUID sessionId,AnswerSubmissionReqDTO answerSubmissionReqDTO){
         log.info("Submit answer request: sessionId={}, userId={}, questionId={}",
                 sessionId, userId, answerSubmissionReqDTO.getQuestionId());
@@ -114,6 +117,18 @@ public class ParticipantSessionService {
         }
 
         return participantQuizSessionService.createParticipantQuizSession(roomId, quizId, userId, "STARTED");
+    }
+
+    private ActiveQuizQuestionDTO formActiveQuizQuestion(QuestionDTO questionDTO,Optional<SubmissionDTO>submissionOp){
+        ActiveQuizQuestionDTO activeQuizQuestionDTO=quizMapper.toActiveQuizQuestionDTO(questionDTO);
+        if(submissionOp.isEmpty()){
+            activeQuizQuestionDTO.setAnswered(false);
+            activeQuizQuestionDTO.setSelectedOptionId(null);
+            return activeQuizQuestionDTO;
+        }
+        activeQuizQuestionDTO.setAnswered(true);
+        activeQuizQuestionDTO.setSelectedOptionId(submissionOp.get().getSelectedOptionId());
+        return activeQuizQuestionDTO;
     }
 
 }

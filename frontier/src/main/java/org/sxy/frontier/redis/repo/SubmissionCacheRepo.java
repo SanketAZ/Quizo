@@ -30,12 +30,12 @@ public class SubmissionCacheRepo {
         String quizId = submissionCacheDTO.getQuizId();
         String userId = submissionCacheDTO.getUserId();
         String questionId = submissionCacheDTO.getQuestionId();
-        String key= RedisKeys.buildSubmissionKey(roomId,quizId,userId,questionId);
+        String key= RedisKeys.buildSubmissionKey(roomId,quizId,questionId,userId);
         valueOpsSubmissionCache.set(key,submissionCacheDTO,ttl);
     }
 
     public Optional<SubmissionCacheDTO> getSubmissionCache(String roomId, String quizId, String userId, String questionId) {
-        String key= RedisKeys.buildSubmissionKey(roomId,quizId,userId,questionId);
+        String key= RedisKeys.buildSubmissionKey(roomId,quizId,questionId,userId);
         SubmissionCacheDTO submissionCacheDTO=valueOpsSubmissionCache.get(key);
         return Optional.ofNullable(submissionCacheDTO);
     }

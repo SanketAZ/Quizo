@@ -27,21 +27,8 @@ public class SubmissionDataService {
     private SubmissionMapper submissionMapper;
 
     public SubmissionDTO getSubmission(UUID roomId, UUID quizId, UUID questionId, UUID userId) {
-        log.debug("Fetching submission for userId={}, quizId={}, roomId={}, questionId={}",
-                userId, quizId, roomId, questionId);
+        Optional<SubmissionDTO> submissionOp=findSubmission(roomId, quizId, questionId, userId);
 
-        Optional<SubmissionCacheDTO> cacheOp=submissionCacheService.getSubmission(roomId,quizId,questionId,userId);
-        if(cacheOp.isPresent()){
-            log.debug("Cache hit - Submission found in cache for userId={}, quizId={}, roomId={}, questionId={}",
-                    userId, quizId, roomId, questionId);
-            return submissionMapper.toSubmissionDTO(cacheOp.get());
-        }
-
-        log.debug("Cache miss - Fetching submission from database for userId={}, quizId={}, roomId={}, questionId={}",
-                userId, quizId, roomId, questionId);
-
-        //fetch from the db
-        Optional<Submission> submissionOp=submissionRepo.findByUserIdAndQuizIdAndRoomIdAndQuestionId(userId,quizId,roomId,questionId);
         if(submissionOp.isEmpty()){
             log.warn("Submission not found for userId={}, quizId={}, roomId={}, questionId={}",
                     userId, quizId, roomId, questionId);
@@ -50,12 +37,35 @@ public class SubmissionDataService {
                     userId, quizId, roomId, questionId);
             throw new ResourceDoesNotExitsException(msg);
         }
+        return submissionOp.get();
+    }
+
+    public Optional<SubmissionDTO> findSubmission(UUID roomId, UUID quizId, UUID questionId, UUID userId){
+        log.debug("Fetching submission for userId={}, quizId={}, roomId={}, questionId={}",
+                userId, quizId, roomId, questionId);
+
+        Optional<SubmissionCacheDTO> cacheOp=submissionCacheService.getSubmission(roomId,quizId,questionId,userId);
+        if(cacheOp.isPresent()){
+            log.debug("Cache hit - Submission found in cache for userId={}, quizId={}, roomId={}, questionId={}",
+                    userId, quizId, roomId, questionId);
+            SubmissionDTO submissionDTO=submissionMapper.toSubmissionDTO(cacheOp.get());
+            return Optional.of(submissionDTO);
+        }
+
+        log.debug("Cache miss - Fetching submission from database for userId={}, quizId={}, roomId={}, questionId={}",
+                userId, quizId, roomId, questionId);
+
+        //fetch from the db
+        Optional<Submission> submissionOp=submissionRepo.findByUserIdAndQuizIdAndRoomIdAndQuestionId(userId,quizId,roomId,questionId);
+        if(submissionOp.isEmpty()){
+            return Optional.empty();
+        }
 
         Submission submission=submissionOp.get();
         SubmissionDTO submissionDTO=submissionMapper.toSubmissionDTO(submission);
 
         submissionCacheService.cacheSubmission(submissionDTO);
-        return submissionDTO;
+        return Optional.of(submissionDTO);
     }
 
     public boolean isQuestionSubmitted(UUID roomId, UUID quizId, UUID questionId, UUID userId) {

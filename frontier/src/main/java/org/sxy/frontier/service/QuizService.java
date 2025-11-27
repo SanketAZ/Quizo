@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sxy.frontier.dto.AnswerEvaluation;
 import org.sxy.frontier.dto.option.OptionDTO;
-import org.sxy.frontier.dto.question.ActiveQuizQuestionDTO;
 import org.sxy.frontier.dto.question.AnswerSubmissionReqDTO;
 import org.sxy.frontier.dto.question.QuestionDTO;
 import org.sxy.frontier.exception.InvalidSubmissionException;
@@ -25,11 +24,11 @@ public class QuizService {
     @Autowired
     private QuizDataService quizDataService;
 
-    public ActiveQuizQuestionDTO fetchActiveQuizQuestion(UUID roomId, UUID quizId, UUID questionID){
-        log.info("Fetching ActiveQuizQuestion: roomId={}, quizId={}, questionId={}",
+
+    public QuestionDTO getQuizQuestion(UUID roomId, UUID quizId, UUID questionID){
+        log.info("Fetching QuizQuestion: roomId={}, quizId={}, questionId={}",
                 roomId, quizId, questionID);
-        QuestionDTO questionDTO= quizDataService.getQuestion(roomId,quizId,questionID);
-        return quizMapper.toActiveQuizQuestionDTO(questionDTO);
+        return quizDataService.getQuestion(roomId,quizId,questionID);
     }
 
     public AnswerEvaluation evaluateAnswer(UUID roomId, UUID quizId, AnswerSubmissionReqDTO answerSubmissionReqDTO){
