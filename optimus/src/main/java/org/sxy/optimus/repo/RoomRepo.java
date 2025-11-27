@@ -15,4 +15,13 @@ import java.util.UUID;
 public interface RoomRepo extends JpaRepository<Room, UUID> {
     boolean existsByRoomIdAndOwnerUserId(UUID roomId, UUID ownerUserId);
     Page<Room> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
+
+    //For joined rooms (user is participant in RoomUser table)-
+    @Query("""
+        SELECT DISTINCT r FROM Room r
+        JOIN RoomUser ru ON ru.roomUserId.roomId = r.roomId
+        WHERE ru.roomUserId.userId = :userId
+    """)
+    Page<Room> findRoomsWhereUserIsParticipant(@Param("userId") UUID userId, Pageable pageable);
+
 }

@@ -79,6 +79,7 @@ public class RoomService {
     public RoomCreateResDTO createRoom(RoomCreateReqDTO roomCreateReqDTO){
 
         Room roomToCreate=roomMapper.toRoom(roomCreateReqDTO);
+        roomRepo.save(roomToCreate);
 
         log.info("New room created: {}", roomToCreate);
 
@@ -156,27 +157,6 @@ public class RoomService {
 
     }
 
-    //Getting Created Rooms for Owner
-    public PageResponse<RoomDisplayDTO> fetchRoomsForOwner(UUID userId,PageRequestDTO pageRequestDTO){
-        //validating the PageRequestDTO with valid order by fields
-        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt"));
-        if(!errors.isEmpty()){
-            throw new ValidationException("Validation failed PageRequestDTO",errors);
-        }
-
-        Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
-
-        Page<Room> roomPage=roomRepo.findByOwnerUserId(userId,pageable);
-
-        List<RoomDisplayDTO> list = roomPage.getContent().stream()
-                .map(roomMapper::toRoomDisplayDTOForOwner)
-                .toList();
-
-        log.info("Owner with id {} fetched the rooms", userId);
-
-        return PageResponse.of(list,roomPage);
-    }
-
     //Method to add users in the particular room
     @Transactional
     public String addUsersToRoom(UUID userId,UUID roomId,AddUsersToRoomRequestDTO addUsersToRoomRequestDTO){
@@ -240,6 +220,52 @@ public class RoomService {
 
         return "Users Removed form the Room";
 
+    }
+
+    public PageResponse<RoomDisplayDTO> fetchOwnedRooms(UUID userId, PageRequestDTO pageRequestDTO){
+        // Validate sort field
+        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt","title"));
+        if(!errors.isEmpty()){
+            throw new ValidationException("Validation failed PageRequestDTO",errors);
+        }
+
+        Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
+
+        Page<Room> roomPage = roomRepo.findByOwnerUserId(userId, pageable);
+        List<RoomDisplayDTO> content = roomPage.getContent().stream()
+                .map(room -> {
+                    RoomDisplayDTO dto = roomMapper.toRoomDisplayDTOForOwner(room);
+                    dto.setOwnerUserId(room.getOwnerUserId().toString());
+                    return dto;
+                })
+                .toList();
+
+        log.info("User {} fetched {} owned rooms (page {})", userId, content.size(), pageRequestDTO.getPageNo());
+
+        return PageResponse.of(content, roomPage);
+    }
+
+    public PageResponse<RoomDisplayDTO> fetchJoinedRooms(UUID userId, PageRequestDTO pageRequestDTO){
+        // Validate sort field
+        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt"));
+        if(!errors.isEmpty()){
+            throw new ValidationException("Validation failed PageRequestDTO",errors);
+        }
+
+        Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
+
+        Page<Room> roomPage = roomRepo.findRoomsWhereUserIsParticipant(userId, pageable);
+        List<RoomDisplayDTO> content = roomPage.getContent().stream()
+                .map(room -> {
+                    RoomDisplayDTO dto = roomMapper.toRoomDisplayDTOForOwner(room);
+                    dto.setOwnerUserId(room.getOwnerUserId().toString());
+                    return dto;
+                })
+                .toList();
+
+        log.info("User {} fetched {} joined rooms (page {})", userId, content.size(), pageRequestDTO.getPageNo());
+
+        return PageResponse.of(content, roomPage);
     }
 
     //This method is to upload all the users in the room to redis with ttl provided
