@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.sxy.frontier.client.OptimusServiceClient;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
 import org.sxy.frontier.dto.QuizDetailDTO;
+import org.sxy.frontier.exception.InvalidSubmissionException;
 import org.sxy.frontier.exception.QuizNotActiveException;
 import org.sxy.frontier.exception.UnauthorizedActionException;
 import org.sxy.frontier.redis.repo.RoomCacheRepo;
@@ -23,6 +24,8 @@ public class AccessControlService {
     private QuizService quizService;
     @Autowired
     private QuizDataService quizDataService;
+    @Autowired
+    private SubmissionDataService submissionDataService;
     @Autowired
     private RoomCacheRepo roomCacheRepo;
     @Autowired
@@ -70,6 +73,20 @@ public class AccessControlService {
         }
 
         log.debug("Participant quiz session {} successfully validated for user {}.", sessionId, userId);
+    }
+
+    public void validateSubmissionStatus(UUID roomId,UUID quizId,UUID questionId,UUID userId){
+        log.debug("Validating submission status: roomId={}, quizId={}, questionId={}, userId={}",
+                    roomId, quizId, questionId, userId);
+
+        Boolean isSubmitted=submissionDataService.isQuestionSubmitted(roomId,quizId,questionId,userId);
+
+            if(isSubmitted){
+                log.warn("Duplicate submission attempt: questionId={}, userId={}", questionId, userId);
+
+                String msg=String.format("Answer for question %s is already submitted.", questionId);
+                throw new InvalidSubmissionException(msg);
+        }
     }
 
 }

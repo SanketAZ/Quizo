@@ -1,6 +1,9 @@
 package org.sxy.frontier.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.sxy.frontier.dto.ParticipantQuizSessionDTO;
@@ -19,26 +22,24 @@ public class LiveQuizController {
     @Autowired
     private ParticipantSessionService  participantSessionService;
 
-    @GetMapping("/{roomId}/{quizId}")
-    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String roomId, @PathVariable String quizId, @RequestParam("qIndex")int qIndex, @RequestParam("seqLabel")String seqLabel) {
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        UUID roomID=UUID.fromString(roomId);
-        UUID quizID=UUID.fromString(quizId);
-        ActiveQuizQuestionDTO res=participantSessionService.fetchQuestion(roomID,quizID,userId,qIndex,seqLabel);
+    @GetMapping("/session/{sessionId}/question/{questionNumber}")
+    public ResponseEntity<ActiveQuizQuestionDTO> getQuestion(@PathVariable String sessionId, @PathVariable @Min(1) int questionNumber) {
+        UUID sessionID = UUID.fromString(sessionId);
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        ActiveQuizQuestionDTO res = participantSessionService.fetchActiveQuizQuestion(userId, sessionID, questionNumber);
         return ResponseEntity
                 .ok()
                 .body(res);
     }
 
-    @PostMapping("/{roomId}/{quizId}")
-    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String roomId, @PathVariable String quizId, @RequestBody AnswerSubmissionReqDTO answerSubmissionReqDTO) {
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        UUID roomID=UUID.fromString(roomId);
-        UUID quizID=UUID.fromString(quizId);
-        AnswerSubmissionResDTO res=participantSessionService.submitQuestion(roomID,quizID,userId,answerSubmissionReqDTO);
+    @PostMapping("/session/{sessionId}/submission")
+    public ResponseEntity<AnswerSubmissionResDTO> submitQuestionAnswer(@PathVariable String sessionId,@RequestBody @Valid AnswerSubmissionReqDTO answerSubmissionReqDTO) {
+        UUID sessionID = UUID.fromString(sessionId);
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        AnswerSubmissionResDTO result=participantSessionService.submitQuestion(userId,sessionID,answerSubmissionReqDTO);
         return ResponseEntity
-                .ok()
-                .body(res);
+                .status(HttpStatus.CREATED)
+                .body(result);
     }
 
     @PostMapping("/{roomId}/{quizId}/start")

@@ -40,7 +40,7 @@ public class Submission {
     private UUID selectedOptionId;
 
     @Column(name = "is_correct",nullable = false)
-    private boolean isCorrect;
+    private Boolean isCorrect;
 
     @Column(name = "obtained_marks",nullable = false)
     private Integer obtainedMarks;
