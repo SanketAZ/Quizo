@@ -79,11 +79,11 @@ public class RoomService {
     public RoomCreateResDTO createRoom(RoomCreateReqDTO roomCreateReqDTO){
 
         Room roomToCreate=roomMapper.toRoom(roomCreateReqDTO);
-        roomRepo.save(roomToCreate);
+        Room room=roomRepo.save(roomToCreate);
 
         log.info("New room created: {}", roomToCreate);
 
-        return roomMapper.toRoomCreateResDTO(roomRepo.save(roomToCreate));
+        return roomMapper.toRoomCreateResDTO(room);
     }
 
     //update room details

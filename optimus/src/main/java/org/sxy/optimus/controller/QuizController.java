@@ -3,6 +3,9 @@ package org.sxy.optimus.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +22,7 @@ import org.sxy.optimus.utility.UserContextHolder;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/quiz")
+@RequestMapping("/api/quizzes")
 @Tag(name = "Quiz",description = "Quiz service api's")
 public class QuizController {
 
@@ -57,12 +60,48 @@ public class QuizController {
     }
 
     //Fetching questions in the quiz for owner
-    @PostMapping("/{quizId}/questions")
-    public ResponseEntity<PageResponse<QuestionDTO>> fetchQuizQuestionsForOwner(@PathVariable("quizId") String quizId, @RequestBody PageRequestDTO pageRequestDTO) {
+    @GetMapping("/{quizId}/questions")
+    public ResponseEntity<PageResponse<QuestionDTO>> fetchQuizQuestionsForOwner(
+            @PathVariable("quizId") String quizId,
+            @RequestParam(value = "pageNo", defaultValue = "0") int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortOrder", defaultValue = "DESC") @Pattern(regexp = "ASC|DESC") String sortOrder) {
 
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
         UUID quizID = UUID.fromString(quizId);
+        PageRequestDTO pageRequestDTO=PageRequestDTO.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .sortBy(sortBy)
+                .sortOrder(sortOrder)
+                .build();
+
         PageResponse<QuestionDTO> response = quizService.getQuizQuestionsForOwner(userId, quizID, pageRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResponse<QuizDisplayDTO>> fetchOwnedQuizzes(
+            @RequestParam(value = "pageNo", required = false, defaultValue = "0") @Min(0) int pageNo,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "20") @Max(100) int pageSize,
+            @RequestParam(value = "roomId", required = false) String roomId,
+            @RequestParam(value = "status", required = true) String status,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortOrder", required = false, defaultValue = "DESC") @Pattern(regexp = "ASC|DESC")  String sortOrder
+
+    ) {
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        UUID roomID = roomId != null ? UUID.fromString(roomId) : null;
+        PageRequestDTO pageRequestDTO=PageRequestDTO.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .sortBy(sortBy)
+                .sortOrder(sortOrder)
+                .build();
+        PageResponse<QuizDisplayDTO> response=quizService.fetchOwnedQuizzes(userId, roomID, status, pageRequestDTO);
         return ResponseEntity
                 .ok()
                 .body(response);

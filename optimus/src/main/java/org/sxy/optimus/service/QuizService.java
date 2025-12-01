@@ -1,11 +1,13 @@
 package org.sxy.optimus.service;
 
+import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.sxy.optimus.dto.PageRequestDTO;
@@ -29,6 +31,7 @@ import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 import org.sxy.optimus.redis.repo.QuizCacheRepository;
 import org.sxy.optimus.redis.service.QuizCacheService;
 import org.sxy.optimus.repo.*;
+import org.sxy.optimus.specifications.QuizSpecifications;
 import org.sxy.optimus.utility.PageRequestHelper;
 import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.utility.QuizValidator;
@@ -58,6 +61,8 @@ public class QuizService {
     private ValidationService validationService;
     @Autowired
     private QuizDataService quizDataService;
+    @Autowired
+    private AccessControlService accessControlService;
 
     private final QuizMapper quizMapper;
 
@@ -117,36 +122,35 @@ public class QuizService {
         return quiz;
     }
 
-    //This method fetches the quizzes present in the room
-    public PageResponse<QuizDisplayDTO> fetchOwnerQuizzesForRoom(UUID userID,String status,UUID roomID, PageRequestDTO pageRequestDTO){
-        //validating the PageRequestDTO with valid order by fields
+    @Transactional(readOnly=true)
+    public PageResponse<QuizDisplayDTO> fetchOwnedQuizzes(UUID userID, @Nullable UUID roomId, String status, PageRequestDTO pageRequestDTO){
         List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt"));
         if(!errors.isEmpty()){
             throw new ValidationException("Validation failed PageRequestDTO",errors);
         }
 
-        //validating the status
         if(!QuizValidator.validateQuizStatus(status)){
             throw new ResourceDoesNotExitsException("Quiz","QuizStatus",status);
         }
 
-        if(!roomRepo.existsById(roomID)){
-            throw new ResourceDoesNotExitsException("Room","roomID",roomID.toString());
-        }
+        accessControlService.validateRoomAccess(userID,roomId);
 
-        if(!roomRepo.existsByRoomIdAndOwnerUserId(roomID,userID)){
-            throw new UnauthorizedActionException("User with id "+userID +"is not authorized to fetch the quizzes");
+        //build specifications
+        Specification<Quiz> spec = QuizSpecifications.hasOwnerId(userID)
+                .and(QuizSpecifications.hasStatus(status));
+        if(roomId!=null){
+            spec = spec.and(QuizSpecifications.hasRoomId(roomId));
         }
 
         Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
 
-        //Getting Quiz page
-        Page<Quiz> quizPage=quizRepo.getQuizDisplayDTOByRoomId(roomID, status,pageable);
+        Page<Quiz> quizPage=quizRepo.findAll(spec,pageable);
         List<QuizDisplayDTO> quizDisplayDTOs=quizPage.getContent()
                 .stream()
                 .map(quizMapper::quizToQuizDisplayDTO).toList();
 
-        log.info("User with id {} fetched the quizzes for room with id {}",userID,roomID);
+        log.info("User {} fetched {} quizzes (roomId={}, status={})",
+                userID, quizDisplayDTOs.size(), roomId, status);
 
         return PageResponse.of(quizDisplayDTOs,quizPage);
     }
