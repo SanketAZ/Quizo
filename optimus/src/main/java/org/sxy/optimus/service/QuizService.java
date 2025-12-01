@@ -4,7 +4,6 @@ import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -14,22 +13,13 @@ import org.sxy.optimus.dto.PageRequestDTO;
 import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.question.*;
 import org.sxy.optimus.dto.quiz.*;
-import org.sxy.optimus.event.QuestionCachedEvent;
-import org.sxy.optimus.event.QuizDetailCachedEvent;
-import org.sxy.optimus.event.QuizQuestionSequenceCachedEvent;
 import org.sxy.optimus.exception.*;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.mapper.QuizQuestionSequenceMapper;
-import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.QuizQuestionSequence;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.projection.QuestionWithOptionsProjection;
-import org.sxy.optimus.redis.dto.QuestionCacheDTO;
-import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
-import org.sxy.optimus.redis.repo.QuizCacheRepository;
-import org.sxy.optimus.redis.service.QuizCacheService;
 import org.sxy.optimus.repo.*;
 import org.sxy.optimus.specifications.QuizSpecifications;
 import org.sxy.optimus.utility.PageRequestHelper;
@@ -37,11 +27,9 @@ import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.utility.QuizValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -151,6 +139,38 @@ public class QuizService {
 
         log.info("User {} fetched {} quizzes (roomId={}, status={})",
                 userID, quizDisplayDTOs.size(), roomId, status);
+
+        return PageResponse.of(quizDisplayDTOs,quizPage);
+    }
+
+    @Transactional(readOnly=true)
+    public PageResponse<QuizDisplayDTO> fetchJoinedQuizzes(UUID userId, @Nullable UUID roomId, String status, PageRequestDTO pageRequestDTO){
+        List<ValidationResult> errors= PageRequestValidator.validatePageRequest(pageRequestDTO, List.of("createdAt","updatedAt","startTime"));
+        if(!errors.isEmpty()){
+            throw new ValidationException("Validation failed PageRequestDTO",errors);
+        }
+
+        if(!QuizValidator.validateQuizStatus(status)){
+            throw new ResourceDoesNotExitsException("Quiz","QuizStatus",status);
+        }
+
+        Specification<Quiz> spec = QuizSpecifications.userIsRoomParticipant(userId)
+                .and(QuizSpecifications.hasStatus(status))
+                .and(QuizSpecifications.notOwnedBy(userId));
+
+        if (roomId != null) {
+            accessControlService.validateRoomMembership(userId, roomId);
+            spec = spec.and(QuizSpecifications.hasRoomId(roomId));
+        }
+
+        Pageable pageable= PageRequestHelper.toPageable(pageRequestDTO);
+
+        Page<Quiz> quizPage=quizRepo.findAll(spec,pageable);
+        List<QuizDisplayDTO> quizDisplayDTOs=quizPage.getContent()
+                .stream()
+                .map(quizMapper::quizToQuizDisplayDTO).toList();
+
+        log.info("User {} fetched {} quizzes (roomId={}, status={})", userId, quizDisplayDTOs.size(), roomId, status);
 
         return PageResponse.of(quizDisplayDTOs,quizPage);
     }

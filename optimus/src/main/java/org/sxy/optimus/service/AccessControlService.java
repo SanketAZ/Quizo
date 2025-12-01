@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
+import org.sxy.optimus.module.compKey.RoomUserId;
 import org.sxy.optimus.repo.RoomRepo;
+import org.sxy.optimus.repo.RoomUserRepo;
 
 import java.util.UUID;
 
@@ -14,10 +16,12 @@ import java.util.UUID;
 public class AccessControlService {
 
     private final RoomRepo roomRepo;
+    private final RoomUserRepo roomUserRepo;
 
     @Autowired
-    public AccessControlService(RoomRepo roomRepo) {
+    public AccessControlService(RoomRepo roomRepo, RoomUserRepo roomUserRepo) {
         this.roomRepo = roomRepo;
+        this.roomUserRepo = roomUserRepo;
     }
 
 
@@ -30,6 +34,19 @@ public class AccessControlService {
         if (!roomRepo.existsByRoomIdAndOwnerUserId(roomId, userId)) {
             throw new UnauthorizedActionException(
                     "User %s is not authorized to access room %s".formatted(userId, roomId)
+            );
+        }
+    }
+
+    public void validateRoomMembership(@Nonnull UUID userId, @Nonnull UUID roomId) {
+        if (!roomRepo.existsById(roomId)) {
+            throw new ResourceDoesNotExitsException("Room", "roomId", roomId.toString());
+        }
+
+        RoomUserId roomUserId = new RoomUserId(roomId, userId);
+        if (!roomUserRepo.existsById(roomUserId)) {
+            throw new UnauthorizedActionException(
+                    "User %s is not a member of room %s".formatted(userId, roomId)
             );
         }
     }

@@ -137,9 +137,9 @@ public class RoomService {
                 })
                 .collect(Collectors.toSet());
 
-        Set<RoomQuiz> existingRoomQuiz=new HashSet<>(room.getRoomQuizes());
+        Set<RoomQuiz> existingRoomQuiz=new HashSet<>(room.getRoomQuizzes());
         existingRoomQuiz.addAll(roomQuizToAdd);
-        room.setRoomQuizes(existingRoomQuiz);
+        room.setRoomQuizzes(existingRoomQuiz);
         Room updatedRoom=roomRepo.save(room);
 
         //List of quiz ids for mapper to obtain RoomDTO
