@@ -2,6 +2,7 @@ package org.sxy.optimus.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -59,23 +60,19 @@ public class RoomController {
 
     }
 
-    @PostMapping("/{roomID}")
-    public ResponseEntity<RoomDTO> addQuizToRoom(@PathVariable("roomID")String roomId, @RequestBody AssignQuizToRoomReqDTO assignQuizToRoomReqDTO){
-        //checking userId in DTO and Principle User
-        if(!assignQuizToRoomReqDTO.getOwnerUserId().equals(UserContextHolder.getUser().getId())){
-            throw new UserIdMismatchException(assignQuizToRoomReqDTO.getOwnerUserId(), UserContextHolder.getUser().getId());
-        }
+    @PostMapping("/{roomID}/add-quiz")
+    public ResponseEntity<AssignQuizToRoomResDTO> addQuizToRoom(
+            @PathVariable("roomID")String roomID,
+            @RequestBody @Valid AssignQuizToRoomReqDTO assignQuizToRoomReqDTO
+    ) {
+        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
+        UUID roomId=UUID.fromString(roomID);
 
-        if(!roomId.equals(assignQuizToRoomReqDTO.getRoomId())){
-            throw new MismatchException(assignQuizToRoomReqDTO.getRoomId(), roomId);
-        }
-
-        RoomDTO updatedRoom=roomService.addQuizzesToRoom(assignQuizToRoomReqDTO);
+        AssignQuizToRoomResDTO response=roomService.addQuizToRoom(userId,roomId,assignQuizToRoomReqDTO);
 
         return ResponseEntity
                 .ok()
-                .body(updatedRoom);
-
+                .body(response);
     }
 
     @GetMapping("/owned")
@@ -84,7 +81,7 @@ public class RoomController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
             @RequestParam(defaultValue = "createdAt")String sortBy,
             @RequestParam(defaultValue = "DESC") @Pattern(regexp = "ASC|DESC") String sortOrder
-    ){
+    ) {
         UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
 
         PageRequestDTO pageRequestDTO=PageRequestDTO.builder()

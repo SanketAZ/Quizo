@@ -11,13 +11,9 @@ import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
-import org.sxy.optimus.module.Question;
-import org.sxy.optimus.module.Quiz;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.redis.dto.QuestionCacheDTO;
 import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
 import org.sxy.optimus.redis.repo.QuizCacheRepository;
-import org.sxy.optimus.repo.*;
 
 import java.time.Duration;
 import java.time.Instant;

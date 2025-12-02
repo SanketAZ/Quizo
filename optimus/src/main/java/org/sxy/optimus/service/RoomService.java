@@ -16,15 +16,15 @@ import org.sxy.optimus.dto.PageResponse;
 import org.sxy.optimus.dto.pojo.RoomUserDetails;
 import org.sxy.optimus.dto.room.*;
 import org.sxy.optimus.event.RoomUserDetailsCachedEvent;
+import org.sxy.optimus.exception.QuizStartTimeException;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.exception.ValidationException;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.mapper.RoomMapper;
+import org.sxy.optimus.module.Quiz;
 import org.sxy.optimus.module.Room;
-import org.sxy.optimus.module.RoomQuiz;
 import org.sxy.optimus.module.RoomUser;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.module.compKey.RoomUserId;
 import org.sxy.optimus.redis.repo.RoomCacheRepository;
 import org.sxy.optimus.repo.QuizRepo;
@@ -35,6 +35,7 @@ import org.sxy.optimus.utility.PageRequestValidator;
 import org.sxy.optimus.validation.ValidationResult;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,9 @@ public class RoomService {
 
     @Autowired
     private RoomCacheRepository redisRoomRepository;
+
+    @Autowired
+    private AccessControlService accessControlService;
 
     @Autowired
     private ValidationService validationService;
@@ -107,54 +111,52 @@ public class RoomService {
 
     }
 
-    //Assign quiz's to room
-    public RoomDTO addQuizzesToRoom(AssignQuizToRoomReqDTO assignQuizToRoomReqDTO){
+    //Assign quiz to room
+    @Transactional
+    public AssignQuizToRoomResDTO addQuizToRoom(UUID userId,UUID roomId,AssignQuizToRoomReqDTO assignQuizToRoomReqDTO){
+        UUID quizId=UUID.fromString(assignQuizToRoomReqDTO.getQuizId());
 
-        //validating provided quiz ids
-        List<ValidationResult> validationResults=validationService.validateQuizIds(assignQuizToRoomReqDTO.getQuizIds());
-        if(!validationResults.isEmpty()){
-            throw new ValidationException("Validation failed for one or more quiz ids",validationResults);
+        Instant currentTime=Instant.now();
+        accessControlService.validateQuizAccess(userId,quizId);
+        accessControlService.validateRoomAccess(userId,roomId);
+
+        Quiz quiz = quizRepo.findById(quizId)
+                .orElseThrow(() -> new ResourceDoesNotExitsException("Quiz", "quizId", quizId.toString()));
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceDoesNotExitsException("Room", "roomId", roomId.toString()));
+
+        Instant startTime=quiz.getStartTime();
+        if (startTime != null && !startTime.isAfter(currentTime)) {
+            // Quiz has already started or finished
+            throw new QuizStartTimeException("Cannot reassign quiz: it has already started or finished");
         }
 
-        //Fetch the Room
-        UUID roomId=UUID.fromString(assignQuizToRoomReqDTO.getRoomId());
-        Room room=roomRepo.findById(roomId)
-                .orElseThrow(() -> new ResourceDoesNotExitsException("Room","roomId",assignQuizToRoomReqDTO.getRoomId()));
-
-
-        //validating user has access to the quiz
-        if(!assignQuizToRoomReqDTO.getOwnerUserId().equals(room.getOwnerUserId().toString())){
-            throw new UnauthorizedActionException("User with id "+assignQuizToRoomReqDTO.getOwnerUserId() +"is not authorized to update the room");
+        // Check if already assigned to this room (no-op)
+        if (quiz.getRoom() != null && quiz.getRoom().getRoomId().equals(roomId)) {
+            log.info("Quiz {} already assigned to room {}", quizId, roomId);
+            return AssignQuizToRoomResDTO.builder()
+                    .roomTitle(quiz.getRoom().getTitle())
+                    .quizId(quizId.toString())
+                    .startTime(null)
+                    .roomId(roomId.toString())
+                    .build();
         }
 
-        //Adding QuizRoom to Room
-        Set<RoomQuiz> roomQuizToAdd=assignQuizToRoomReqDTO.getQuizIds().stream()
-                .map(s -> {
-                    RoomQuiz roomQuiz=new RoomQuiz(new RoomQuizId(roomId,UUID.fromString(s)));
-                    roomQuiz.setRoom(room);
-                    roomQuiz.setQuiz(quizRepo.getReferenceById(UUID.fromString(s)));
-                    return roomQuiz;
-                })
-                .collect(Collectors.toSet());
+        // Assign quiz to new room, reset start time for safety
+        quiz.setRoom(room);
+        quiz.setStartTime(null);
+        Quiz savedQuiz = quizRepo.save(quiz);
 
-        Set<RoomQuiz> existingRoomQuiz=new HashSet<>(room.getRoomQuizzes());
-        existingRoomQuiz.addAll(roomQuizToAdd);
-        room.setRoomQuizzes(existingRoomQuiz);
-        Room updatedRoom=roomRepo.save(room);
+        AssignQuizToRoomResDTO resDTO=AssignQuizToRoomResDTO.builder()
+                .roomTitle(quiz.getRoom().getTitle())
+                .quizId(savedQuiz.getQuizId().toString())
+                .startTime(null)
+                .roomId(roomId.toString())
+                .build();
 
-        //List of quiz ids for mapper to obtain RoomDTO
-        List<String> allQuizIds=existingRoomQuiz.stream()
-                .map(roomQuiz -> roomQuiz.getId().getQuizId().toString())
-                .toList();
+        log.info("Quiz {} assigned to room {} by user {}. Start time reset.", quizId, roomId, userId);
 
-        log.info("Quizzes added to room: {} are: {}", roomId, allQuizIds);
-
-        //Adding list of quiz ids to dto
-        RoomDTO resDTO=roomMapper.toRoomDTO(updatedRoom);
-        resDTO.setQuizIds(allQuizIds);
-
-        return resDTO;
-
+        return  resDTO;
     }
 
     //Method to add users in the particular room

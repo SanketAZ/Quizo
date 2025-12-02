@@ -6,16 +6,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.time.Instant;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssignQuizToRoomReqDTO {
-    @NotEmpty(message = "Room id is required")
-    private String roomId;
-
-    @NotEmpty(message = "Quiz id is required")
+public class AssignQuizToRoomResDTO {
     private String quizId;
+    private String roomId;
+    private Instant startTime;
+    private String roomTitle;
 }

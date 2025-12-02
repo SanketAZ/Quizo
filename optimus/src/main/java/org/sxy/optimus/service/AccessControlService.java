@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.module.compKey.RoomUserId;
+import org.sxy.optimus.repo.QuizRepo;
 import org.sxy.optimus.repo.RoomRepo;
 import org.sxy.optimus.repo.RoomUserRepo;
 
@@ -17,11 +18,13 @@ public class AccessControlService {
 
     private final RoomRepo roomRepo;
     private final RoomUserRepo roomUserRepo;
+    private final QuizRepo quizRepo;
 
     @Autowired
-    public AccessControlService(RoomRepo roomRepo, RoomUserRepo roomUserRepo) {
+    public AccessControlService(RoomRepo roomRepo, RoomUserRepo roomUserRepo, QuizRepo quizRepo) {
         this.roomRepo = roomRepo;
         this.roomUserRepo = roomUserRepo;
+        this.quizRepo = quizRepo;
     }
 
 
@@ -34,6 +37,19 @@ public class AccessControlService {
         if (!roomRepo.existsByRoomIdAndOwnerUserId(roomId, userId)) {
             throw new UnauthorizedActionException(
                     "User %s is not authorized to access room %s".formatted(userId, roomId)
+            );
+        }
+    }
+
+    public void validateQuizAccess(@Nonnull UUID userId, @Nullable UUID quizId) {
+        if (quizId == null) return;
+
+        if (!quizRepo.existsById(quizId)) {
+            throw new ResourceDoesNotExitsException("Quiz", "quiz", quizId.toString());
+        }
+        if (!quizRepo.existsByQuizIdAndCreatorUserId(quizId, userId)) {
+            throw new UnauthorizedActionException(
+                    "User %s is not authorized to access quiz %s".formatted(userId, quizId)
             );
         }
     }
