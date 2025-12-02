@@ -30,9 +30,6 @@ public class RoomController {
     @Autowired
     private RoomService roomService;
 
-    @Autowired
-    private QuizService quizService;
-
     @PostMapping
     @Operation(summary = "To add Room with some basic details")
     public ResponseEntity<RoomCreateResDTO> createRoom(@RequestBody RoomCreateReqDTO roomCreateReqDTO){

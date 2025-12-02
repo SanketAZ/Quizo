@@ -153,15 +153,4 @@ public class QuizController {
                 .ok()
                 .body(response);
     }
-
-    @DeleteMapping("/{quizId}/question")
-    public ResponseEntity<QuestionDeleteResDTO> deleteQuestionsFromQuiz(@PathVariable("quizId") String quizId,@RequestBody @Valid QuestionDeleteReqDTO reqDTO) {
-        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
-        UUID quizID = UUID.fromString(quizId);
-
-        QuestionDeleteResDTO response = quizService.deleteQuestions(userId,quizID,reqDTO);
-        return ResponseEntity
-                .ok()
-                .body(response);
-    }
 }

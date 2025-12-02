@@ -268,51 +268,6 @@ public class QuizService {
         return response;
     }
 
-    @Transactional
-    public QuestionDeleteResDTO deleteQuestions(UUID userID, UUID quizID, QuestionDeleteReqDTO questionDeleteReqDTO){
-        quizQuestionSequenceRepo.deferConstraints();//*
-        if(!quizRepo.existsById(quizID)){
-            throw new ResourceDoesNotExitsException("Quiz","quizID",userID.toString());
-        }
-        //validate user access
-        if(!quizRepo.existsByQuizIdAndCreatorUserId(quizID,userID)){
-            throw new UnauthorizedActionException("User with id "+userID +"is not authorized to make updates for quiz: "+quizID);
-        }
-
-        //validate all questions belong the quiz
-        List<UUID>idsReq=questionDeleteReqDTO.getQuestionIds()
-                .stream()
-                .map(UUID::fromString)
-                .toList();
-        List<UUID>existingIds=questionRepo.findQuestionIdsForQuiz(quizID);
-        int deletedCount=questionDeleteReqDTO.getQuestionIds().size();
-
-        List<ValidationResult> errors = validationService.validateQuestionIdsToDelete(idsReq,existingIds);
-        if (!errors.isEmpty()) {
-            throw new ValidationException("Validation failed", errors);
-        }
-
-        //delete the questions
-        questionRepo.deleteByIdsAndQuizId(idsReq,quizID);
-
-        //Update the question sequence
-        List<QuizQuestionSequence> questionSequenceList=quizQuestionSequenceRepo.findAllByQuizOrderByPositionAsc(quizRepo.getReferenceById(quizID));
-
-        int updatedPos=1;
-        for (QuizQuestionSequence qs : questionSequenceList) {
-            qs.setPosition(updatedPos);
-            updatedPos++;
-        }
-        quizQuestionSequenceRepo.saveAll(questionSequenceList);
-
-        log.info("Delete operation complete for quiz {}. Deleted: {}", quizID, deletedCount);
-
-        return QuestionDeleteResDTO.builder()
-                .questionIds(questionDeleteReqDTO.getQuestionIds())
-                .deletedCount(deletedCount)
-                .build();
-    }
-
     @Transactional(readOnly = true)
     public QuizDetailDTO getQuizDetail(UUID roomId, UUID quizId){
         return quizDataService.getQuizDetail(roomId, quizId);
