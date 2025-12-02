@@ -2,6 +2,10 @@ package org.sxy.optimus.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +21,14 @@ import org.sxy.optimus.utility.UserContextHolder;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/room")
-@Tag(name = "Room",description = "Room service api's")
+@RequestMapping("/api/rooms")
+@Tag(name = "Room",description = "Room management APIs")
 public class RoomController {
 
     @Autowired
     private RoomService roomService;
-
-    @Autowired
-    private QuizService quizService;
 
     @PostMapping
     @Operation(summary = "To add Room with some basic details")
@@ -76,24 +78,49 @@ public class RoomController {
 
     }
 
-    //Get all quizzes present in the room just passing some quiz details
-    @PostMapping("/{roomId}/quizzes")
-    public ResponseEntity<PageResponse<QuizDisplayDTO>> fetchRoomQuizzesForOwner(@PathVariable String roomId,@RequestParam(value = "status",required = true)String status, @RequestBody PageRequestDTO pageRequestDTO) {
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        PageResponse<QuizDisplayDTO> requiredQuizzes=quizService.fetchOwnerQuizzesForRoom(userId,status,UUID.fromString(roomId), pageRequestDTO);
-        return ResponseEntity
-                .ok()
-                .body(requiredQuizzes);
+    @GetMapping("/owned")
+    public ResponseEntity<PageResponse<RoomDisplayDTO>> getOwnedRooms(
+            @RequestParam(defaultValue = "0") @Min(0) int pageNo,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
+            @RequestParam(defaultValue = "createdAt")String sortBy,
+            @RequestParam(defaultValue = "DESC") @Pattern(regexp = "ASC|DESC") String sortOrder
+    ){
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+
+        PageRequestDTO pageRequestDTO=PageRequestDTO.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .sortBy(sortBy)
+                .sortOrder(sortOrder)
+                .build();
+
+        PageResponse<RoomDisplayDTO> rooms = roomService.fetchOwnedRooms(
+                userId, pageRequestDTO
+        );
+
+        return ResponseEntity.ok(rooms);
     }
 
-    //All Rooms For given owner
-    @PostMapping ("/owner")
-    public ResponseEntity<PageResponse<RoomDisplayDTO>> fetchRoomsForOwner(@RequestBody PageRequestDTO pageRequestDTO){
-        UUID userId=UUID.fromString(UserContextHolder.getUser().getId());
-        PageResponse<RoomDisplayDTO> requiredRooms=roomService.fetchRoomsForOwner(userId,pageRequestDTO);
-        return ResponseEntity
-                .ok()
-                .body(requiredRooms);
+    @GetMapping("/joined")
+    public ResponseEntity<PageResponse<RoomDisplayDTO>> getJoinedRooms(
+            @RequestParam(defaultValue = "0") @Min(0) int pageNo,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
+            @RequestParam(defaultValue = "createdAt")String sortBy,
+            @RequestParam(defaultValue = "DESC") @Pattern(regexp = "ASC|DESC") String sortOrder
+    ){
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        PageRequestDTO pageRequestDTO=PageRequestDTO.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .sortBy(sortBy)
+                .sortOrder(sortOrder)
+                .build();
+
+        PageResponse<RoomDisplayDTO> rooms = roomService.fetchJoinedRooms(
+                userId, pageRequestDTO
+        );
+
+        return ResponseEntity.ok(rooms);
     }
 
     //Adding users to the given room

@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.sxy.optimus.dto.question.QuestionCreateResDTO;
-import org.sxy.optimus.dto.question.QuestionRequestDTO;
-import org.sxy.optimus.dto.question.QuestionUpdateReqDTO;
-import org.sxy.optimus.dto.question.QuestionUpdateResDTO;
+import org.sxy.optimus.dto.question.*;
 import org.sxy.optimus.dto.quiz.QuizQuestionsAddResDTO;
 import org.sxy.optimus.exception.UserIdMismatchException;
 import org.sxy.optimus.service.QuestionService;
@@ -20,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/question")
+@RequestMapping("/api/questions")
 @Tag(name = "Question",description = "Question service api's")
 public class QuestionController {
 
@@ -65,6 +62,17 @@ public class QuestionController {
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(updatedQuestion);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<QuestionDeleteResDTO> deleteQuestionsFromQuiz(@RequestParam("quizId") String quizId, @RequestBody @Valid QuestionDeleteReqDTO reqDTO) {
+        UUID userId = UUID.fromString(UserContextHolder.getUser().getId());
+        UUID quizID = UUID.fromString(quizId);
+
+        QuestionDeleteResDTO response = questionService.deleteQuestions(userId,quizID,reqDTO);
+        return ResponseEntity
+                .ok()
+                .body(response);
     }
 
 }

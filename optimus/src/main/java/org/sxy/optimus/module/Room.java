@@ -34,7 +34,7 @@ public class Room {
     private Instant updatedAt;
 
     @OneToMany(mappedBy = "room",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    private Set<RoomQuiz> roomQuizes;
+    private Set<RoomQuiz> roomQuizzes;
 
     @OneToMany(mappedBy = "room",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private Set<RoomUser> roomUsers;
@@ -47,12 +47,12 @@ public class Room {
         this.roomId = roomId;
     }
 
-    public Set<RoomQuiz> getRoomQuizes() {
-        return roomQuizes;
+    public Set<RoomQuiz> getRoomQuizzes() {
+        return roomQuizzes;
     }
 
-    public void setRoomQuizes(Set<RoomQuiz> roomQuizes) {
-        this.roomQuizes = roomQuizes;
+    public void setRoomQuizzes(Set<RoomQuiz> roomQuizzes) {
+        this.roomQuizzes = roomQuizzes;
     }
 
     public Instant getUpdatedAt() {

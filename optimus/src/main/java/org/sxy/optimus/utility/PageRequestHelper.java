@@ -1,5 +1,6 @@
 package org.sxy.optimus.utility;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -7,24 +8,23 @@ import org.sxy.optimus.dto.PageRequestDTO;
 
 import java.util.List;
 
+@Slf4j
 public class PageRequestHelper {
     public static Pageable toPageable(PageRequestDTO pageRequestDTO){
-        Sort sort=buildSort(pageRequestDTO.getAscSortBy(),pageRequestDTO.getDescSortBy());
-        return PageRequest.of(pageRequestDTO.getPageNo(),pageRequestDTO.getPageSize(),sort);
-    }
+        String sortBy = pageRequestDTO.getSortBy();
+        String sortOrder = pageRequestDTO.getSortOrder();
+        int pageSize = pageRequestDTO.getPageSize();
+        int pageNo = pageRequestDTO.getPageNo();
 
-    private static Sort buildSort(List<String> ascFields, List<String> descFields){
-        Sort sort=Sort.unsorted();
-        if(ascFields!=null && !ascFields.isEmpty()){
-            for(String ascField : ascFields){
-                sort = sort.and(Sort.by(Sort.Direction.ASC, ascField));
-            }
-        }
-        if(descFields!=null && !descFields.isEmpty()){
-            for(String descField : descFields){
-                sort = sort.and(Sort.by(Sort.Direction.DESC, descField));
-            }
-        }
-        return sort;
+        log.debug("Converting PageRequestDTO to Pageable: pageNo={}, pageSize={}, sortBy={}, sortOrder={}",
+                pageNo, pageSize, sortBy, sortOrder);
+
+        Sort sort = sortOrder.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        log.debug("Created Pageable with sort direction: {}", sort.toString());
+        return pageable;
     }
 }
