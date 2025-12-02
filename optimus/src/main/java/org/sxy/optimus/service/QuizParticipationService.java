@@ -7,14 +7,11 @@ import org.springframework.stereotype.Service;
 import org.sxy.optimus.dto.quiz.QuizPreviewDTO;
 import org.sxy.optimus.exception.ResourceDoesNotExitsException;
 import org.sxy.optimus.exception.UnauthorizedActionException;
-import org.sxy.optimus.module.Quiz;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.module.compKey.RoomUserId;
 import org.sxy.optimus.repo.*;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class QuizParticipationService {
@@ -32,9 +29,6 @@ public class QuizParticipationService {
 
     @Autowired
     private RoomUserRepo roomUserRepo;
-
-    @Autowired
-    private RoomQuizRepo roomQuizRepo;
 
     /**
      * Returns a preview of quiz questions for a participant user.
@@ -66,7 +60,7 @@ public class QuizParticipationService {
         }
 
         //check quiz is part of given room
-        if(!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))){
+        if(!quizRepo.existsByQuizIdAndRoomId(quizId,roomId)){
             log.warn("Quiz {} is not part of room {}", quizId, roomId);
             String msg=String.format("Quiz with id: %s does not exist in Room with id: %s",quizId,roomId);
             throw new UnauthorizedActionException(msg);

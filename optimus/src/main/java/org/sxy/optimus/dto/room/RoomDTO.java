@@ -1,15 +1,11 @@
 package org.sxy.optimus.dto.room;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.sxy.optimus.module.RoomQuiz;
 
-import java.time.Instant;
+import jakarta.validation.constraints.NotEmpty;
+
+
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+
 
 public class RoomDTO {
     @NotEmpty(message = "Room id is required")

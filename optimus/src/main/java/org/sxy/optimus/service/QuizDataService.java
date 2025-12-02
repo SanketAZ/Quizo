@@ -13,18 +13,12 @@ import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Question;
 import org.sxy.optimus.module.Quiz;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.redis.dto.QuestionCacheDTO;
-import org.sxy.optimus.redis.dto.QuizDetailCacheDTO;
-import org.sxy.optimus.redis.repo.QuizCacheRepository;
 import org.sxy.optimus.redis.service.QuizCacheService;
 import org.sxy.optimus.repo.QuestionRepo;
 import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
-import org.sxy.optimus.repo.RoomQuizRepo;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,8 +40,6 @@ public class QuizDataService {
     private QuestionRepo questionRepo;
     @Autowired
     private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
-    @Autowired
-    private RoomQuizRepo roomQuizRepo;
 
     public QuizDetailDTO getQuizDetail(UUID roomId, UUID quizId){
         var cachedOpt = quizCacheService.getQuizDetailCache(roomId, quizId);
@@ -57,7 +49,7 @@ public class QuizDataService {
         if (!quizRepo.existsById(quizId)) {
             throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
         }
-        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+        if (!quizRepo.existsByQuizIdAndRoomId(quizId,roomId)) {
             throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
         }
 
@@ -77,7 +69,7 @@ public class QuizDataService {
         if (!quizRepo.existsById(quizId)) {
             throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
         }
-        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+        if (!quizRepo.existsByQuizIdAndRoomId(quizId,roomId)) {
             throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
         }
         List<QuestionPositionDTO>questionPositions=quizQuestionSequenceRepo.findAllQuestionPositionsByQuiz(quizId);

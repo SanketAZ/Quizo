@@ -12,11 +12,9 @@ import org.sxy.optimus.exception.UnauthorizedActionException;
 import org.sxy.optimus.mapper.QuestionMapper;
 import org.sxy.optimus.mapper.QuizMapper;
 import org.sxy.optimus.module.Quiz;
-import org.sxy.optimus.module.compKey.RoomQuizId;
 import org.sxy.optimus.redis.repo.QuizCacheRepository;
 import org.sxy.optimus.repo.QuizQuestionSequenceRepo;
 import org.sxy.optimus.repo.QuizRepo;
-import org.sxy.optimus.repo.RoomQuizRepo;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,9 +31,6 @@ public class QuizCacheLoaderService {
 
     @Autowired
     private QuizRepo quizRepo;
-
-    @Autowired
-    private RoomQuizRepo roomQuizRepo;
 
     @Autowired
     private QuizQuestionSequenceRepo quizQuestionSequenceRepo;
@@ -58,7 +53,7 @@ public class QuizCacheLoaderService {
             throw new ResourceDoesNotExitsException("Quiz","QuizID",quizId.toString());
         }
 
-        if (!roomQuizRepo.existsById(new RoomQuizId(roomId,quizId))) {
+        if (!quizRepo.existsByQuizIdAndRoomId(quizId,roomId)) {
             throw new UnauthorizedActionException("Quiz with id "+quizId.toString()+" does not exist in Room with id "+roomId.toString());
         }
 

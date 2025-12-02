@@ -60,6 +60,7 @@ public class Quiz {
     @OneToMany(mappedBy = "quiz",fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Question> questions;
 
-    @OneToMany(mappedBy = "quiz",fetch = FetchType.LAZY)
-    private Set<RoomQuiz> roomQuizzes;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private Room room;
 }
